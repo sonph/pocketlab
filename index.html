@@ -14,127 +14,118 @@
 </head>
 <body>
     <div id="app">
-        <!-- Main Layout -->
-        <div class="panel panel-left" id="panel-timer">
-            <!-- Metronome/Timer -->
-            <div id="metronome-controls" style="margin-top: 1rem; padding: 1rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
-                <h2>Metronome</h2>
-                <div style="margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;" data-help="Click Play to start the metronome. The clock and bar counter will track your active session elapsed time.">
-                    <button id="play-btn" style="padding: 0.5rem 1rem; font-size: 1.2rem; cursor: pointer;">Play</button>
-                    <span id="timer-display" style="font-size: 1.2rem; font-variant-numeric: tabular-nums;">0:00</span>
-                    <span id="bar-display" style="font-size: 1.2rem; font-variant-numeric: tabular-nums; color: var(--color-primary-accent);">BAR 1</span>
+        <!-- Top Horizontal Dashboard -->
+        <div id="top-bar" class="surface" style="position: relative; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; z-index: 10;">
+            
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <button id="play-btn" data-help="Click Play to start the metronome. The clock and bar counter will track your active session elapsed time." style="padding: 0.5rem 1rem; font-size: 1.2rem; cursor: pointer; background: var(--color-primary-accent); border: none; font-weight: bold; border-radius: 4px; color: black;">Play</button>
+                <div style="display: flex; gap: 1rem; align-items: baseline;">
+                    <span id="timer-display" data-help="Active elapsed time tracking." style="font-size: 1.2rem; font-variant-numeric: tabular-nums;">0:00</span>
+                    <span id="bar-display" data-help="Current measure count in the active setting interval." style="font-size: 1.2rem; font-variant-numeric: tabular-nums; color: var(--color-primary-accent);">BAR 1</span>
                 </div>
-                
-                <div style="margin-bottom: 1rem; background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 4px;" data-help="BPM (Beats Per Minute) sets the main tempo. Use the quick-step buttons or slider for rapid tuning.">
-                    <label>BPM: </label>
-                    <div style="display: flex; align-items: center; margin-top: 0.5rem;">
-                        <button class="bpm-step" data-step="-10">-10</button>
-                        <button class="bpm-step" data-step="-5">-5</button>
-                        <button class="bpm-step" data-step="-1">-1</button>
-                        <input type="number" id="bpm-input" value="120" min="40" max="300" style="width: 70px; margin: 0 0.5rem; text-align: center;">
-                        <button class="bpm-step" data-step="1">+1</button>
-                        <button class="bpm-step" data-step="5">+5</button>
-                        <button class="bpm-step" data-step="10">+10</button>
-                    </div>
-                    <div style="margin-top: 0.5rem;">
-                        <input type="range" id="bpm-slider" value="120" min="40" max="300" style="width: 100%;">
-                    </div>
-                </div>
+            </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <!-- Core Configs -->
-                    <div>
-                        <h3>Core Settings</h3>
-                        <div data-help="Select 'Endless' to practice indefinitely, or set a focused duration filter which will auto-stop the clock.">
-                            <label>Interval:</label>
-                            <select id="setting-intervalMode">
-                                <option value="endless">Endless</option>
-                                <option value="1min">Focus (1 min)</option>
-                                <option value="3min">Stamina (3 min)</option>
-                            </select>
-                        </div>
-                        <div style="margin-top: 0.5rem;" data-help="Sets the number of standard bars played before the session tracker and muting challenges actually begin.">
-                            <label>Count-In:</label>
-                            <select id="setting-countInBars">
-                                <option value="0">Off</option>
-                                <option value="1">1 Bar</option>
-                                <option value="2" selected>2 Bars</option>
-                            </select>
-                        </div>
-                        <div style="margin-top: 0.5rem;" data-help="Select the click tone. 'Woodblock' is warmer, 'Voice' counts out loud, and 'Standard' is an electronic beep.">
-                            <label>Voicing:</label>
-                            <select id="setting-voicing">
-                                <option value="beep">Standard Beep</option>
-                                <option value="woodblock">Woodblock</option>
-                                <option value="voice">Human Voice (Stubs)</option>
-                            </select>
-                        </div>
-                        <div style="margin-top: 0.5rem;" data-help="Filters out specific beat pulses. 'Ands' only plays the offbeats; '2 and 4' forces backbeat feel.">
-                            <label>Emphasis:</label>
-                            <select id="setting-emphasis">
-                                <option value="on-beat">On-beat</option>
-                                <option value="ands">Ands only</option>
-                                <option value="2and4">2 and 4 only</option>
-                            </select>
-                        </div>
-                    </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 8px;" data-help="BPM (Beats Per Minute) sets the main tempo. Use the quick-step buttons for rapid tuning.">
+                <span style="font-weight: bold;">BPM</span>
+                <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="-5">-5</button>
+                <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="-1">-1</button>
+                <input type="number" id="bpm-input" value="120" min="40" max="300" style="width: 60px; text-align: center; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: white; padding: 0.2rem;">
+                <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="1">+1</button>
+                <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="5">+5</button>
+            </div>
 
-                    <!-- Challenges -->
-                    <div>
-                        <h3>Rhythm Challenges</h3>
-                        <div data-help="Mutes the click to test your internal tempo keeping. Choose a Constant loop or let the engine randomize the silences.">
-                            <label>Gap Radio Mode:</label>
-                            <select id="setting-gapRadioMode">
+            <!-- Core Settings -->
+            <div style="display: flex; align-items: center; gap: 0.8rem;">
+                <select id="setting-intervalMode" title="Interval Mode" data-help="Select 'Endless' to practice indefinitely, or set a focused duration filter which will auto-stop the clock." style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                    <option value="endless">Endless</option>
+                    <option value="1min">Focus (1 min)</option>
+                    <option value="3min">Stamina (3 min)</option>
+                </select>
+                <select id="setting-countInBars" title="Count-In" data-help="Sets the number of standard bars played before the session tracker and muting challenges actually begin." style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                    <option value="0">No Count</option>
+                    <option value="1">1 Bar-In</option>
+                    <option value="2" selected>2 Bar-In</option>
+                </select>
+                <select id="setting-voicing" title="Voicing" data-help="Select the click tone. 'Woodblock' is warmer, 'Voice' counts out loud, and 'Standard' is an electronic beep." style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                    <option value="beep">Beep</option>
+                    <option value="woodblock">Wood</option>
+                    <option value="voice">Voice</option>
+                </select>
+                <select id="setting-emphasis" title="Emphasis Grid" data-help="Filters out specific beat pulses. 'Ands' only plays the offbeats; '2 and 4' forces backbeat feel." style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                    <option value="on-beat">On-beat</option>
+                    <option value="ands">Ands</option>
+                    <option value="2and4">2 & 4</option>
+                </select>
+                <label style="color: var(--color-primary-accent); margin-left: 0.5rem; font-size: 0.85rem; text-transform: uppercase;">Graph Scale:</label>
+                <select id="setting-graphScale" title="Graph Scale" data-help="Choose the scale for the Scatter Plot timing error Y-Axis. '16th Beat' bounds strictly to a perfect 16th note timing threshold." style="padding: 0.3rem; background: rgba(56, 189, 248, 0.2); color: white; border: 1px solid var(--color-primary-accent); border-radius: 4px; font-weight: bold;">
+                    <option value="ms">Auto MS</option>
+                    <option value="16th" selected>16th Beat Max</option>
+                </select>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <button id="btn-toggle-challenges" data-help="Opens the drop-down menu for advanced Mute Bars and Shaky Click features." style="padding: 0.4rem 0.8rem; cursor: pointer; border-radius: 4px; border: 1px solid rgba(255,255,255,0.4); background: rgba(255,255,255,0.1); color: white;">More Options ▽</button>
+                <button id="btn-hardware-setup" data-help="Configure MIDI ports, map custom electronic drum triggers, and calibrate system latency." style="padding: 0.4rem 0.8rem; cursor: pointer; border-radius: 4px; background: rgba(56, 189, 248, 0.2); color: var(--color-primary-accent); border: 1px solid var(--color-primary-accent);">⚙️ Setup</button>
+            </div>
+
+            <!-- Absolute Dropdown Overlay for Challenges -->
+            <div id="expanded-rhythm-settings" style="display: none; position: absolute; top: calc(100% + 10px); left: 0; right: 0; background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); padding: 1.5rem; z-index: 20; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+                <div style="display: flex; justify-content: space-around; gap: 2rem;">
+                    <!-- Mute Bars -->
+                    <div style="flex: 1;">
+                        <h3 style="margin-top: 0;">Mute Bars</h3>
+                        <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">Mutes the click completely to test your internal tempo keeping.</p>
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-top: 1rem;">
+                            <select id="setting-gapRadioMode" style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
                                 <option value="off">Off</option>
                                 <option value="constant">Constant</option>
                                 <option value="random-beat">Random Beat</option>
                                 <option value="random-bar">Random Bar</option>
                             </select>
+                            <span data-help="When Mute Bars is set to 'Constant', configures the exact amount of full bars played vs muted.">
+                                <input type="number" id="setting-gapConstantOn" value="1" min="1" max="16" style="width: 50px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;"> On /
+                                <input type="number" id="setting-gapConstantOff" value="1" min="1" max="16" style="width: 50px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;"> Off
+                            </span>
                         </div>
-                        <div style="margin-top: 0.5rem;" data-help="When Gap is set to 'Constant', configures the exact amount of full bars played vs muted.">
-                            <label>Constant Config:</label>
-                            <input type="number" id="setting-gapConstantOn" value="1" min="1" max="16" style="width: 40px;" title="Bars On"> On /
-                            <input type="number" id="setting-gapConstantOff" value="1" min="1" max="16" style="width: 40px;" title="Bars Off"> Off
+                        <div id="setting-gapChaos-container" style="margin-top: 1rem; display: none; align-items: center; gap: 1rem;" data-help="When Mute Bars is set to 'Random', determines the percentage (%) chance any individual click will be randomly deleted.">
+                            <label>Random Chance:</label>
+                            <input type="range" id="setting-gapChaos" value="50" min="0" max="100" style="flex: 1;">
                         </div>
-                        <div style="margin-top: 0.5rem;" data-help="When Gap is set to 'Random Beat', determines the percentage (%) chance any individual click will be randomly deleted.">
-                            <label>Chaos (%):</label>
-                            <input type="range" id="setting-gapChaos" value="50" min="0" max="100">
+                    </div>
+
+                    <div style="width: 1px; background: rgba(255,255,255,0.1);"></div>
+
+                    <!-- Shaky Click -->
+                    <div style="flex: 1;">
+                        <h3 style="margin-top: 0; color: var(--color-warning);">Shaky Click</h3>
+                        <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">Challenges you to keep a consistent time despite an inconsistent click. Your score is judged against the actual consistent grid.</p>
+                        <div style="margin-top: 1rem;">
+                            <label><input type="checkbox" id="setting-shakyEnabled"> <b>Enable Simulator</b></label>
                         </div>
-                        
-                        <div style="margin-top: 1rem;" data-help="'The Bad Bassist'. Simulates playing with someone dragging or rushing by randomly offsetting the clicks.">
-                            <label>
-                                <input type="checkbox" id="setting-shakyEnabled"> <b>Shaky Click</b>
-                            </label>
-                        </div>
-                        <div style="margin-top: 0.5rem;" data-help="The maximum unsteadiness penalty applied to a shaky click in milliseconds.">
-                            <label>Jitter Range (ms):</label>
-                            <input type="number" id="setting-shakyRange" value="10" min="1" max="100" style="width: 50px;">
-                        </div>
-                        <div style="margin-top: 0.5rem;" data-help="The percentage (%) chance the engine will actually jitter a click on any given beat.">
-                            <label>Chance (%):</label>
-                            <input type="range" id="setting-shakyChance" value="50" min="0" max="100">
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-top: 1rem;">
+                            <span data-help="The maximum unsteadiness penalty applied to a shaky click in milliseconds.">
+                                <label>Jitter Range:</label>
+                                <input type="number" id="setting-shakyRange" value="10" min="1" max="100" style="width: 60px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;"> ms
+                            </span>
+                            <span data-help="The percentage chance the engine will actually jitter a click on any given beat.">
+                                <label>Jitter Chance:</label>
+                                <input type="number" id="setting-shakyChance" value="50" min="0" max="100" style="width: 50px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;"> %
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <details open id="help-section" style="margin-top: 1rem; padding: 1rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
-                <summary style="cursor: pointer; font-size: 1.1rem; font-weight: bold; color: var(--color-primary-accent);">Help</summary>
-                <div id="help-content" style="margin-top: 1rem; font-style: italic; color: #94a3b8; min-height: 3rem;">
-                    Hover over any control or graph to see its description and goal here.
-                </div>
-            </details>
-        <div class="panel panel-center" id="panel-lab">
-            <!-- Active Visualization -->
         </div>
-        <div class="panel panel-right surface" id="panel-stats">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2>Session Stats</h2>
-                <button id="btn-hardware-setup" style="padding: 0.5rem 1rem; cursor: pointer; border-radius: 4px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);">⚙️ HW Setup</button>
-            </div>
-            <div id="stats-content" style="flex: 1; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.5);">
-                (Stats engine pending)
-            </div>
+
+        <!-- Main Visualization Layer -->
+        <div class="panel-lab surface" id="panel-lab" style="flex: 1; position: relative; overflow: hidden; margin-top: 1rem; border-color: rgba(255,255,255,0.1) !important;" data-help="Open Ended Scatter Plot. X-Axis: Velocity. Y-Axis: Timing Error. The center dashed line is perfect pocket. Above the line is Late, below is Early. Notes fade as new hits arrive.">
+            <!-- Active Visualization -->
+            <canvas id="lab-canvas" style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
+        </div>
+
+        <!-- Help Footer -->
+        <div id="help-footer" style="padding: 0.5rem; text-align: center; color: #a3e635; font-style: italic; font-size: 0.9rem; margin-top: 1rem; min-height: 2.2rem; display: flex; align-items: center; justify-content: center;">
+            <span id="help-content">Hover over any control or system graph to view its documentation here.</span>
         </div>
     </div>
 

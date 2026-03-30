@@ -1,5 +1,6 @@
 import { Metronome } from './metronome.js';
 import { MidiEngine } from './midi.js';
+import { Visualizer } from './visualizer.js';
 
 /**
  * Pocket Lab Core Application
@@ -10,6 +11,8 @@ class PocketLabApp {
     constructor() {
         this.metronome = new Metronome();
         this.midi = new MidiEngine();
+        this.visualizer = null;
+        this.expectedHits = []; // Queue of structural times the user *should* hit
         this.init();
     }
 
@@ -41,6 +44,7 @@ class PocketLabApp {
             if (bpmInput) bpmInput.value = bpm;
             if (bpmSlider) bpmSlider.value = bpm;
             this.metronome.setBpm(bpm);
+            if (this.visualizer) this.visualizer.setBpm(bpm);
         };
 
         if (bpmInput) {
@@ -82,9 +86,50 @@ class PocketLabApp {
         bindSetting('setting-gapConstantOff', 'gapConstantOff', true);
         bindSetting('setting-gapChaos', 'gapChaos', true);
         
+        // Hide/Show Random Chance slider based on Gap Radio Mode
+        const gapRadioSel = document.getElementById('setting-gapRadioMode');
+        const gapChaosContainer = document.getElementById('setting-gapChaos-container');
+        if (gapRadioSel && gapChaosContainer) {
+            const updateChaosVisibility = () => {
+                if (gapRadioSel.value === 'random-beat' || gapRadioSel.value === 'random-bar') {
+                    gapChaosContainer.style.display = 'flex';
+                } else {
+                    gapChaosContainer.style.display = 'none';
+                }
+            };
+            gapRadioSel.addEventListener('change', updateChaosVisibility);
+            updateChaosVisibility(); // init state
+        }
+        
         bindSetting('setting-shakyEnabled', 'shakyEnabled');
         bindSetting('setting-shakyRange', 'shakyRange', true);
         bindSetting('setting-shakyChance', 'shakyChance', true);
+
+        // UI toggles and Graph Settings
+        const btnToggleChallenges = document.getElementById('btn-toggle-challenges');
+        const expandedSettings = document.getElementById('expanded-rhythm-settings');
+        if (btnToggleChallenges && expandedSettings) {
+            btnToggleChallenges.addEventListener('click', () => {
+                if (expandedSettings.style.display === 'none') {
+                    expandedSettings.style.display = 'block';
+                    btnToggleChallenges.textContent = 'Close △';
+                    btnToggleChallenges.style.background = 'rgba(255,255,255,0.3)';
+                } else {
+                    expandedSettings.style.display = 'none';
+                    btnToggleChallenges.textContent = 'More Options ▽';
+                    btnToggleChallenges.style.background = 'rgba(255,255,255,0.1)';
+                }
+            });
+        }
+        
+        const graphScaleSel = document.getElementById('setting-graphScale');
+        if (graphScaleSel) {
+            graphScaleSel.addEventListener('change', (e) => {
+                if (this.visualizer) {
+                    this.visualizer.setMeasureMode(e.target.value);
+                }
+            });
+        }
 
         // Interactive Help System (Event Delegation)
         const mainHelpContent = document.getElementById('help-content');
@@ -326,8 +371,42 @@ class PocketLabApp {
         }
 
         this.midi.onHit = (hitDetails) => {
-             // For testing
-             console.log("Valid Pad Hit ->", hitDetails);
+            // Find the closest expected hit in our rolling window
+            if (this.expectedHits.length === 0 || !this.visualizer) return;
+            
+            const now = performance.now();
+            let closestHit = this.expectedHits[0];
+            let minDiff = Math.abs(now - expectedHitPerfTime(closestHit));
+            
+            for(let i = 1; i < this.expectedHits.length; i++) {
+                const diff = Math.abs(now - expectedHitPerfTime(this.expectedHits[i]));
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closestHit = this.expectedHits[i];
+                }
+            }
+            
+            // Expected time physically arriving from drum
+            const expectedPerf = expectedHitPerfTime(closestHit);
+            const offsetMs = now - expectedPerf;
+            
+            // Only plot if it's within a very wide logical threshold (e.g. they aren't just jamming randomly while click is running)
+            if (Math.abs(offsetMs) < 400) {
+                 this.visualizer.addHit(
+                     hitDetails.velocity, 
+                     offsetMs, 
+                     this.midi.mappings[hitDetails.instrument].color, 
+                     this.midi.mappings[hitDetails.instrument].shape
+                 );
+            }
+        };
+
+        // Helper to convert audio Time to performance.now()
+        const expectedHitPerfTime = (audioTimeSecs) => {
+            const nowAudio = this.metronome.audioContext.currentTime;
+            const nowPerf = performance.now();
+            // T_target_arrival = T_click_audio + L_sys
+            return nowPerf + ((audioTimeSecs - nowAudio) * 1000) + this.midi.latencySys;
         };
 
         // Logging & Troubleshooter logic
@@ -435,7 +514,25 @@ class PocketLabApp {
 
     setupCanvas() {
         // Initialize Canvas API/SVG rendering
-        console.log("Canvas setup initialized.");
+        this.visualizer = new Visualizer('lab-canvas');
+        console.log("Canvas mapping established.");
+
+        // Tap into the metronome loop to populate expectations
+        const baseOnNoteScheduled = this.metronome.onNoteScheduled;
+        this.metronome.onNoteScheduled = (scheduleObj) => {
+             if (baseOnNoteScheduled) baseOnNoteScheduled(scheduleObj);
+             
+             // We only track standard grid hits (don't care about silence notes if any)
+             // But actually, even gap radio gap beats should be tracked theoretically so user can play through them?
+             // Since gap radio mutes audio, but the structure exists. We'll track the scheduleObj.time.
+             
+             // Queue management
+             this.expectedHits.push(scheduleObj.time);
+             
+             // Clear out old expectations to prevent memory leak
+             const nowAudio = this.metronome.audioContext.currentTime;
+             this.expectedHits = this.expectedHits.filter(t => t > nowAudio - 2.0); // keep 2 seconds of history
+        };
     }
 }
 

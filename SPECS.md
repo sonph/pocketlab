@@ -47,7 +47,7 @@
 
   * **Emphasis Modes:** "Ands" only, "2 and 4" only (Backbeat focus), or standard "On-beat."
 
-  * **Gap Radio:**
+  * **Mute Bars:**
 
     * *Constant:* X bars on, Y bars off.
 
@@ -55,7 +55,7 @@
 
     * *Random Bar:* Randomizes the number of active vs. silent bars within a user-defined range.
 
-  * **Shaky Click (The "Bad Bassist" Mode):** A toggle that introduces random timing jitter to the click itself (configurable % chance and ms range) to train the drummer to hold their own time.
+  * **Shaky Click:** A toggle that challenges you to keep a consistent time despite an inconsistent click (configurable % chance and ms range). Your score is judged against the actual consistent grid.
 
 ## 3. Visualization Suite ("The Lab")
 
@@ -205,7 +205,7 @@ $$S_{total} = (w_1 \cdot \overline{S_{hit}}) + (w_2 \cdot \overline{S_{limb}}) -
 
 ### 5. Implementation Notes for "Shaky Click"
 
-When "Shaky Click" is active, the $T_{click}$ used in the formula above is the **actual** (shifted) time the click played, not the theoretical grid time. This rewards the drummer for following the "bad bassist" perfectly, rather than staying on a grid the user can no longer hear.
+When "Shaky Click" is active, the $T_{click}$ used in the formula above remains the **theoretical grid time**. Your score is judged against the actual consistent grid, not the shifted click.
 
 ## Performance
 

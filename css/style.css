@@ -30,27 +30,10 @@ body {
 
 #app {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     height: 100vh;
     padding: 1rem;
-    gap: 1rem;
-}
-
-.panel {
-    display: flex;
-    flex-direction: column;
-}
-
-.panel-left {
-    flex: 1; /* Metronome/Timer */
-}
-
-.panel-center {
-    flex: 2; /* Active Visualization (The Lab) */
-}
-
-.panel-right {
-    flex: 1; /* Session Stats & Help */
+    gap: 0;
 }
 
 /* Base surface component for cards/panels */
