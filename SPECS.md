@@ -33,6 +33,8 @@
   * **Focus (1 min):** High-intensity concentration.
 
   * **Stamina (3 min):** Endurance training.
+  
+  * **Real-time Tracking:** The UI must display a precise elapsed time counter synced directly to the AudioContext alongside an active Bar count tracker.
 
 * **Count-In Logic:** Default is **2 bars**. User configurable to 1 bar or Off.
 

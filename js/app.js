@@ -56,6 +56,68 @@ class PocketLabApp {
                 updateBpm(this.metronome.bpm + step);
             });
         });
+
+        // Advanced Config UI Bindings
+        const bindSetting = (id, property, isNumber = false) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const handler = (e) => {
+                let val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+                if (isNumber) val = Number(val);
+                this.metronome.updateSettings({ [property]: val });
+            };
+            el.addEventListener('change', handler);
+            el.addEventListener('input', handler); 
+        };
+
+        bindSetting('setting-intervalMode', 'intervalMode');
+        bindSetting('setting-countInBars', 'countInBars', true);
+        bindSetting('setting-voicing', 'voicing');
+        bindSetting('setting-emphasis', 'emphasis');
+        
+        bindSetting('setting-gapRadioMode', 'gapRadioMode');
+        bindSetting('setting-gapConstantOn', 'gapConstantOn', true);
+        bindSetting('setting-gapConstantOff', 'gapConstantOff', true);
+        bindSetting('setting-gapChaos', 'gapChaos', true);
+        
+        bindSetting('setting-shakyEnabled', 'shakyEnabled');
+        bindSetting('setting-shakyRange', 'shakyRange', true);
+        bindSetting('setting-shakyChance', 'shakyChance', true);
+
+        // Timer Display Loop
+        const timerDisplay = document.getElementById('timer-display');
+        const barDisplay = document.getElementById('bar-display');
+        
+        this.metronome.onIntervalComplete = () => {
+            if (playBtn) playBtn.textContent = 'Play';
+            if (timerDisplay) timerDisplay.textContent = 'DONE';
+        };
+
+        const renderTimer = () => {
+            if (this.metronome.isPlaying && this.metronome.sessionStartTime) {
+                // Time
+                const elapsedCtx = this.metronome.audioContext.currentTime - this.metronome.sessionStartTime;
+                const m = Math.floor(elapsedCtx / 60);
+                const s = Math.floor(elapsedCtx % 60);
+                if (elapsedCtx >= 0 && timerDisplay) {
+                    timerDisplay.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+                }
+                // Bars
+                if (barDisplay) {
+                    const activeBars = this.metronome.currentBarTotal - this.metronome.countInBars + 1;
+                    barDisplay.textContent = `BAR ${activeBars}`;
+                }
+            } else if (this.metronome.isPlaying && this.metronome.currentBarTotal < this.metronome.countInBars) {
+                const barsLeft = this.metronome.countInBars - this.metronome.currentBarTotal;
+                if (timerDisplay) timerDisplay.textContent = `-IN: ${barsLeft} BAR(S)`;
+                if (barDisplay) barDisplay.textContent = 'BAR --';
+            } else if (!this.metronome.isPlaying) {
+                if (timerDisplay && timerDisplay.textContent !== 'DONE') timerDisplay.textContent = '0:00';
+                if (barDisplay) barDisplay.textContent = 'BAR 1';
+            }
+            requestAnimationFrame(renderTimer);
+        };
+        requestAnimationFrame(renderTimer);
     }
 
     setupMidi() {

@@ -17,26 +17,103 @@
         <!-- Main Layout -->
         <div class="panel panel-left" id="panel-timer">
             <!-- Metronome/Timer -->
-            <div id="metronome-controls" style="margin-top: 2rem;">
-                <h2>Metronome Test</h2>
-                <div>
-                    <button id="play-btn">Play</button>
+            <div id="metronome-controls" style="margin-top: 1rem; padding: 1rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
+                <h2>Metronome</h2>
+                <div style="margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;">
+                    <button id="play-btn" style="padding: 0.5rem 1rem; font-size: 1.2rem; cursor: pointer;">Play</button>
+                    <span id="timer-display" style="font-size: 1.2rem; font-variant-numeric: tabular-nums;">0:00</span>
+                    <span id="bar-display" style="font-size: 1.2rem; font-variant-numeric: tabular-nums; color: var(--color-primary-accent);">BAR 1</span>
                 </div>
-                <div style="margin-top: 1rem;">
+                
+                <div style="margin-bottom: 1rem; background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 4px;">
                     <label>BPM: </label>
                     <div style="display: flex; align-items: center; margin-top: 0.5rem;">
                         <button class="bpm-step" data-step="-10">-10</button>
                         <button class="bpm-step" data-step="-5">-5</button>
                         <button class="bpm-step" data-step="-1">-1</button>
-                        
                         <input type="number" id="bpm-input" value="120" min="40" max="300" style="width: 70px; margin: 0 0.5rem; text-align: center;">
-                        
                         <button class="bpm-step" data-step="1">+1</button>
                         <button class="bpm-step" data-step="5">+5</button>
                         <button class="bpm-step" data-step="10">+10</button>
                     </div>
                     <div style="margin-top: 0.5rem;">
                         <input type="range" id="bpm-slider" value="120" min="40" max="300" style="width: 100%;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <!-- Core Configs -->
+                    <div>
+                        <h3>Core Settings</h3>
+                        <div>
+                            <label>Interval:</label>
+                            <select id="setting-intervalMode">
+                                <option value="endless">Endless</option>
+                                <option value="1min">Focus (1 min)</option>
+                                <option value="3min">Stamina (3 min)</option>
+                            </select>
+                        </div>
+                        <div style="margin-top: 0.5rem;">
+                            <label>Count-In:</label>
+                            <select id="setting-countInBars">
+                                <option value="0">Off</option>
+                                <option value="1">1 Bar</option>
+                                <option value="2" selected>2 Bars</option>
+                            </select>
+                        </div>
+                        <div style="margin-top: 0.5rem;">
+                            <label>Voicing:</label>
+                            <select id="setting-voicing">
+                                <option value="beep">Standard Beep</option>
+                                <option value="woodblock">Woodblock</option>
+                                <option value="voice">Human Voice (Stubs)</option>
+                            </select>
+                        </div>
+                        <div style="margin-top: 0.5rem;">
+                            <label>Emphasis:</label>
+                            <select id="setting-emphasis">
+                                <option value="on-beat">On-beat</option>
+                                <option value="ands">Ands only</option>
+                                <option value="2and4">2 and 4 only</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Challenges -->
+                    <div>
+                        <h3>Rhythm Challenges</h3>
+                        <div>
+                            <label>Gap Radio Mode:</label>
+                            <select id="setting-gapRadioMode">
+                                <option value="off">Off</option>
+                                <option value="constant">Constant</option>
+                                <option value="random-beat">Random Beat</option>
+                                <option value="random-bar">Random Bar</option>
+                            </select>
+                        </div>
+                        <div style="margin-top: 0.5rem;">
+                            <label>Constant Config:</label>
+                            <input type="number" id="setting-gapConstantOn" value="1" min="1" max="16" style="width: 40px;" title="Bars On"> On /
+                            <input type="number" id="setting-gapConstantOff" value="1" min="1" max="16" style="width: 40px;" title="Bars Off"> Off
+                        </div>
+                        <div style="margin-top: 0.5rem;">
+                            <label>Chaos (%):</label>
+                            <input type="range" id="setting-gapChaos" value="50" min="0" max="100">
+                        </div>
+                        
+                        <div style="margin-top: 1rem;">
+                            <label>
+                                <input type="checkbox" id="setting-shakyEnabled"> <b>Shaky Click</b>
+                            </label>
+                        </div>
+                        <div style="margin-top: 0.5rem;">
+                            <label>Jitter Range (ms):</label>
+                            <input type="number" id="setting-shakyRange" value="10" min="1" max="100" style="width: 50px;">
+                        </div>
+                        <div style="margin-top: 0.5rem;">
+                            <label>Chance (%):</label>
+                            <input type="range" id="setting-shakyChance" value="50" min="0" max="100">
+                        </div>
                     </div>
                 </div>
             </div>
