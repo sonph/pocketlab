@@ -154,15 +154,16 @@
         <!-- Setup View Focus -->
         <div id="view-setup">
             <div style="margin-bottom: 2rem;">
-                <h3>MIDI Connection</h3>
+                <h3 data-help="Current status of the browser's Web MIDI API connection.">MIDI Connection</h3>
                 <div id="midi-status" style="color: var(--color-warning);">Waiting for browser Web MIDI permission...</div>
             </div>
 
-            <div style="margin-bottom: 2rem;">
-                <h3 data-help="Velocity threshold. Any physical pad hit softer than this value will be ignored.">Ghost Note Filter</h3>
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <input type="range" id="hw-ghost-threshold" min="0" max="127" value="1" style="flex: 1;">
-                    <span id="hw-ghost-display" style="width: 30px;">1</span>
+            <div style="margin-bottom: 2rem;" data-help="Velocity threshold (0-127). Any physical pad strike that registers a velocity softer than this numeric value will be ignored. Useful for preventing vibrations or false-triggers from displaying.">
+                <h3>Ghost Note Filter</h3>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem;">
+                    <input type="number" id="hw-ghost-threshold" min="0" max="127" value="1" style="width: 80px; padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                    <button id="btn-calibrate-ghost" data-help="Click this and strike your pads as softly as possible. The engine records your loudest 'ghost note'. Click 'Finish' to automatically set the filter exactly 1 step above it." style="padding: 0.3rem 1rem; cursor: pointer; background: var(--color-primary-accent); border: none; border-radius: 4px; font-weight: bold; color: black;">Calibrate</button>
+                    <div id="ghost-status" style="font-size: 0.9rem; color: #94a3b8; margin-left: 0.5rem;"></div>
                 </div>
             </div>
 
@@ -172,10 +173,10 @@
                 <table style="width: 100%; text-align: left; border-collapse: collapse;">
                     <thead>
                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
-                            <th style="padding: 0.5rem; width: 20%;">Instrument</th>
-                            <th style="padding: 0.5rem; width: 35%;">Note IDs</th>
-                            <th style="padding: 0.5rem; width: 25%;">Live Map</th>
-                            <th style="padding: 0.5rem; width: 20%;">Visuals</th>
+                            <th data-help="The drum component you are configuring." style="padding: 0.5rem; width: 20%;">Instrument</th>
+                            <th data-help="The internal numerical identity of the MIDI note sent by the drum brain." style="padding: 0.5rem; width: 35%;">Note IDs</th>
+                            <th data-help="Click 'Listen' and strike a pad to automatically register its Note ID." style="padding: 0.5rem; width: 25%;">Live Map</th>
+                            <th data-help="Visual configuration for how this pad displays in the visualizations." style="padding: 0.5rem; width: 20%;">Visuals</th>
                         </tr>
                     </thead>
                     <tbody id="mapping-tbody">
@@ -184,14 +185,22 @@
                 </table>
             </div>
 
-            <div>
+            <div style="margin-bottom: 2rem;">
                 <h3>System Calibration (Latency Sync)</h3>
                 <p style="font-size: 0.9rem; color: #94a3b8; font-style: italic;">Strike any mapped pad exactly simultaneously with the pulse to calculate your system latency offset.</p>
                 <div style="display: flex; align-items: center; gap: 1rem; margin-top: 1rem;">
-                    <button id="btn-start-calibration" style="padding: 0.5rem 1rem; cursor: pointer; background: var(--color-primary-accent); border: none; border-radius: 4px; font-weight: bold; color: black;">Start Calibration (8 Hits)</button>
+                    <button id="btn-start-calibration" data-help="Striking repeatedly along with the click track allows the engine to calculate and subtract out latency caused by your specific hardware." style="padding: 0.5rem 1rem; cursor: pointer; background: var(--color-primary-accent); border: none; border-radius: 4px; font-weight: bold; color: black;">Start Calibration (8 Hits)</button>
                     <div id="calibration-status" style="font-variant-numeric: tabular-nums;">Ready. L_sys: 0ms</div>
                 </div>
             </div>
+
+            <!-- Modal Help System Relocated To Bottom -->
+            <details id="modal-help-section" style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                <summary style="cursor: pointer; font-weight: bold; color: var(--color-primary-accent);">Interactive Help</summary>
+                <div id="modal-help-content" style="margin-top: 0.5rem; color: #94a3b8; font-size: 0.9rem; line-height: 1.4; min-height: 3rem;">
+                    Hover over any control or graph to see its description and goal here.
+                </div>
+            </details>
         </div>
 
         <!-- Troubleshoot View Focus -->
@@ -199,13 +208,13 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <div>
                     <label style="margin-right: 0.5rem;">Log Level Filter:</label>
-                    <select id="log-level-filter" style="background: rgba(0,0,0,0.3); color: white; padding: 0.3rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                    <select id="log-level-filter" data-help="Determine how verbose the hardware logger is. Level 1 filters out continuous controller pedaling spam." style="background: rgba(0,0,0,0.3); color: white; padding: 0.3rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
                         <option value="1">1 - Note On</option>
                         <option value="2">2 - All Standard MIDI Events</option>
                         <option value="3">3 - Everything (Raw)</option>
                     </select>
                 </div>
-                <button id="btn-clear-log" style="padding: 0.3rem 0.6rem; cursor: pointer; background: rgba(239, 68, 68, 0.2); border: 1px solid var(--color-critical); color: var(--color-critical); border-radius: 4px;">Clear Console</button>
+                <button id="btn-clear-log" data-help="Erases the current console readout." style="padding: 0.3rem 0.6rem; cursor: pointer; background: rgba(239, 68, 68, 0.2); border: 1px solid var(--color-critical); color: var(--color-critical); border-radius: 4px;">Clear Console</button>
             </div>
             
             <!-- Limit to 5000 messages via JS logic inside app -->

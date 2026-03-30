@@ -86,22 +86,29 @@ class PocketLabApp {
         bindSetting('setting-shakyRange', 'shakyRange', true);
         bindSetting('setting-shakyChance', 'shakyChance', true);
 
-        // Interactive Help System
-        const helpContent = document.getElementById('help-content');
+        // Interactive Help System (Event Delegation)
+        const mainHelpContent = document.getElementById('help-content');
+        const modalHelpContent = document.getElementById('modal-help-content');
         const defaultHelpText = "Hover over any control or graph to see its description and goal here.";
-        const helpEls = document.querySelectorAll('[data-help]');
         
-        if (helpContent) {
-            helpEls.forEach(el => {
-                el.addEventListener('mouseenter', (e) => {
-                    e.stopPropagation();
-                    helpContent.textContent = el.getAttribute('data-help');
-                });
-                el.addEventListener('mouseleave', () => {
-                    helpContent.textContent = defaultHelpText;
-                });
-            });
-        }
+        const updateHelpText = (text) => {
+            if (mainHelpContent) mainHelpContent.textContent = text;
+            if (modalHelpContent) modalHelpContent.textContent = text;
+        };
+
+        document.body.addEventListener('mouseover', (e) => {
+            const helpTarget = e.target.closest('[data-help]');
+            if (helpTarget) {
+                updateHelpText(helpTarget.getAttribute('data-help'));
+            }
+        });
+
+        document.body.addEventListener('mouseout', (e) => {
+            const helpTarget = e.target.closest('[data-help]');
+            if (helpTarget) {
+                updateHelpText(defaultHelpText);
+            }
+        });
 
         // Timer Display Loop
         const timerDisplay = document.getElementById('timer-display');
@@ -156,6 +163,21 @@ class PocketLabApp {
                 this.midi.isLoggingEnabled = true;
             } else {
                 this.midi.isLoggingEnabled = false;
+            }
+
+            // Cleanup when closing the modal
+            if (!modal.open) {
+                const ghostStatus = document.getElementById('ghost-status');
+                if (ghostStatus) ghostStatus.textContent = '';
+                
+                if (this.midi.isCalibratingGhostNotes) {
+                    this.midi.isCalibratingGhostNotes = false;
+                    const ghostBtn = document.getElementById('btn-calibrate-ghost');
+                    if (ghostBtn) {
+                        ghostBtn.textContent = 'Calibrate';
+                        ghostBtn.style.background = 'var(--color-primary-accent)';
+                    }
+                }
             }
         };
 
@@ -216,15 +238,49 @@ class PocketLabApp {
             }
         }
 
-        // Ghost Note Config
+        // Ghost Note Config & Calibration
         const ghostThresh = document.getElementById('hw-ghost-threshold');
-        const ghostDisp = document.getElementById('hw-ghost-display');
+        const ghostBtn = document.getElementById('btn-calibrate-ghost');
+        const ghostStatus = document.getElementById('ghost-status');
+        
         if (ghostThresh) {
             ghostThresh.addEventListener('input', (e) => {
-                const val = parseInt(e.target.value);
+                let val = parseInt(e.target.value);
+                if (isNaN(val)) val = 0;
                 this.midi.ghostThreshold = val;
-                if (ghostDisp) ghostDisp.textContent = val;
             });
+            ghostThresh.value = this.midi.ghostThreshold;
+        }
+
+        if (ghostBtn) {
+            ghostBtn.addEventListener('click', () => {
+                if (!this.midi.isCalibratingGhostNotes) {
+                    // Start Calibrating
+                    this.midi.isCalibratingGhostNotes = true;
+                    this.midi.ghostCalibrationMax = 0;
+                    ghostBtn.textContent = 'Finish';
+                    ghostBtn.style.background = 'var(--color-warning)';
+                    if (ghostStatus) ghostStatus.textContent = "Hit ghost notes on ANY drum...";
+                } else {
+                    // Finish Calibration
+                    this.midi.isCalibratingGhostNotes = false;
+                    ghostBtn.textContent = 'Calibrate';
+                    ghostBtn.style.background = 'var(--color-primary-accent)';
+                    
+                    const newThreshold = this.midi.ghostCalibrationMax > 0 ? this.midi.ghostCalibrationMax + 1 : this.midi.ghostThreshold;
+                    this.midi.ghostThreshold = newThreshold;
+                    if (ghostThresh) ghostThresh.value = newThreshold;
+                    if (ghostStatus) {
+                        ghostStatus.textContent = `Maximum ghost note velocity of ${this.midi.ghostCalibrationMax} set as ghost note velocity filter (Threshold: ${newThreshold})`;
+                    }
+                }
+            });
+            
+            this.midi.onGhostCalibrationHit = (vel, maxVel) => {
+                if (ghostStatus) {
+                    ghostStatus.textContent = `Hit: ${vel} | Max so far: ${maxVel}`;
+                }
+            };
         }
 
         // Live Mapping
@@ -318,13 +374,13 @@ class PocketLabApp {
             tr.innerHTML = `
                 <td style="padding: 0.5rem; text-transform: capitalize;">${config.name}</td>
                 <td style="padding: 0.5rem;">
-                    <input type="text" id="map-note-${id}" value="${noteIdsStr}" style="width: 100%; max-width: 120px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;" placeholder="38, 40">
+                    <input type="text" id="map-note-${id}" data-help="Comma separated numeric Note IDs for this drum zone (e.g. 38, 40)" value="${noteIdsStr}" style="width: 100%; max-width: 120px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;" placeholder="38, 40">
                 </td>
                 <td style="padding: 0.5rem; display: flex; gap: 0.5rem;">
-                    <button class="live-map-btn" data-id="${id}" style="cursor:pointer; padding: 0.2rem 0.5rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
+                    <button class="live-map-btn" data-id="${id}" data-help="Click this, then physically strike your electronic pad to automatically record its Note ID." style="cursor:pointer; padding: 0.2rem 0.5rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
                         ${this.midi.liveMapTarget === id ? '🎧...' : 'Listen'}
                     </button>
-                    <button class="clear-map-btn" data-id="${id}" style="cursor:pointer; padding: 0.2rem; border-radius: 4px; background: rgba(239, 68, 68, 0.2); color: var(--color-critical); border: 1px solid var(--color-critical);" title="Clear Notes">
+                    <button class="clear-map-btn" data-id="${id}" data-help="Clear all registered Note IDs for this instrument." style="cursor:pointer; padding: 0.2rem; border-radius: 4px; background: rgba(239, 68, 68, 0.2); color: var(--color-critical); border: 1px solid var(--color-critical);" title="Clear Notes">
                         🗑️
                     </button>
                 </td>

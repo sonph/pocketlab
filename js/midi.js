@@ -9,12 +9,16 @@ export class MidiEngine {
         this.onHit = null; // (hitDetails) => {}
         this.onLiveMapComplete = null; // (instrument, noteIdsArray) => {}
         this.onCalibrationHit = null; // (offset, avg, remaining) => {}
+        this.onGhostCalibrationHit = null; // (vel, maxVel) => {}
         this.onMidiLog = null; // (logString) => {}
         
         // System state
         this.isCalibrating = false;
         this.calibrationHits = [];
         this.calibrationExpectedTime = 0;
+        
+        this.isCalibratingGhostNotes = false;
+        this.ghostCalibrationMax = 0;
         
         this.liveMapTarget = null;
 
@@ -101,6 +105,18 @@ export class MidiEngine {
 
         // --- Core Routing ---
         if (cmd === 9 && velocity > 0) {
+            
+            // 0. Ghost Note Calibration intercept layer
+            if (this.isCalibratingGhostNotes) {
+                if (velocity > this.ghostCalibrationMax) {
+                    this.ghostCalibrationMax = velocity;
+                }
+                if (this.onGhostCalibrationHit) {
+                    this.onGhostCalibrationHit(velocity, this.ghostCalibrationMax);
+                }
+                return;
+            }
+
             // 1. Ghost Note Velocity Filter
             if (velocity < this.ghostThreshold) {
                 if (this.isLoggingEnabled && this.onMidiLog && this.logLevel >= 1) {
