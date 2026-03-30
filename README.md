@@ -66,4 +66,42 @@ For now, perform manual verification through the development server, ensuring yo
 * `index.html`: Main application entry point and layout structure.
 * `css/style.css`: UI styling utilizing the "Obsidian Midnight" design system.
 * `js/app.js`: Core application logic, initializing Web MIDI and the display rendering engines.
+* `js/metronome.js`: The Web Audio API timing engine powering the pulse and rhythm challenges.
 * `SPECS.md`: Detailed product specifications, feature requirements, and scoring algorithms.
+
+## 📋 Development Roadmap
+
+### Core Technical Architecture
+- [ ] Implement Web MIDI API capture and hardware input detection
+- [ ] Build the Calibration Layer for system latency sync
+- [ ] Create MIDI Mapping interface (Live Registration & Manual Table)
+- [ ] Build global Ghost Note Velocity Filter
+
+### Advanced Metronome Engine ("The Pulse")
+- [x] Configure AudioContext lookahead scheduler for rock-solid timing
+- [x] Implement dynamic BPM adjusting via sliders and step buttons
+- [x] Build Time-Based interval halting (Endless, Focus, Stamina)
+- [x] Add Count-In phase logic (1 bar, 2 bars, Off)
+- [x] Setup Voicing engine (Standard Beep, Woodblock, Voice assets)
+- [x] Implement Emphasis Grid (On-beat, Ands only, 2 & 4 only)
+- [x] Build Gap Radio Challenges (Constant muting, Random Beat, Random Bar)
+- [x] Build Shaky Click timing jitter simulation
+- [x] Display real-time Elapsed Time and Bar counting
+
+### Visualization Suite ("The Lab")
+- [ ] Implement the "Open Ended" Scatter Plot (Velocity vs Timing Offset)
+- [ ] Build the Limb Offset Matrix (Merged & Isolated modes)
+- [ ] Implement the Pocket Heatmap bell-curve
+
+### Scoring & Success Metrics
+- [ ] Implement the Timing Score mathematical formula
+- [ ] Implement the Limb Alignment Score formula
+- [ ] Engineer the Global Session Score aggregator
+- [ ] Setup Session History local storage persistence
+
+### UI Context
+- [x] Lay out the 3-panel screen grid Architecture
+- [x] Setup "Obsidian Midnight" theme and Flexbox panels
+- [x] Build out the dynamic collapsible Help System
+- [ ] Implement the Center Panel Visualization canvas container
+- [ ] Implement the Right Panel Session Statistics board
