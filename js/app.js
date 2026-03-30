@@ -1,6 +1,7 @@
 import { Metronome } from './metronome.js';
 import { MidiEngine } from './midi.js';
 import { Visualizer } from './visualizer.js';
+import { Histogram } from './histogram.js';
 
 /**
  * Pocket Lab Core Application
@@ -12,6 +13,7 @@ class PocketLabApp {
         this.metronome = new Metronome();
         this.midi = new MidiEngine();
         this.visualizer = null;
+        this.histogram = null;
         this.expectedHits = []; // Queue of structural times the user *should* hit
         this.init();
     }
@@ -41,6 +43,9 @@ class PocketLabApp {
                 if (this.visualizer) {
                     this.visualizer.isPlaying = this.metronome.isPlaying;
                 }
+                if (this.histogram && this.metronome.isPlaying) {
+                    this.histogram.clear();
+                }
             });
         
         const updateBpm = (val) => {
@@ -53,6 +58,7 @@ class PocketLabApp {
             if (bpmSlider) bpmSlider.value = bpm;
             this.metronome.setBpm(bpm);
             if (this.visualizer) this.visualizer.setBpm(bpm);
+            if (this.histogram) this.histogram.setBpm(bpm);
         };
 
         if (bpmInput) {
@@ -135,6 +141,9 @@ class PocketLabApp {
             graphScaleSel.addEventListener('change', (e) => {
                 if (this.visualizer) {
                     this.visualizer.setMeasureMode(e.target.value);
+                }
+                if (this.histogram) {
+                    this.histogram.setMeasureMode(e.target.value);
                 }
             });
         }
@@ -428,12 +437,17 @@ class PocketLabApp {
             
             // Only plot if it's within a very wide logical threshold (e.g. they aren't just jamming randomly while click is running)
             if (Math.abs(offsetMs) < 400) {
-                 this.visualizer.addHit(
-                     hitDetails.velocity, 
-                     offsetMs, 
-                     this.midi.mappings[hitDetails.instrument].color, 
-                     this.midi.mappings[hitDetails.instrument].shape
-                 );
+                 if (this.visualizer) {
+                     this.visualizer.addHit(
+                         hitDetails.velocity, 
+                         offsetMs, 
+                         this.midi.mappings[hitDetails.instrument].color, 
+                         this.midi.mappings[hitDetails.instrument].shape
+                     );
+                 }
+                 if (this.histogram) {
+                     this.histogram.addHit(offsetMs);
+                 }
             }
         };
 
@@ -551,6 +565,7 @@ class PocketLabApp {
     setupCanvas() {
         // Initialize Canvas API/SVG rendering
         this.visualizer = new Visualizer('lab-canvas');
+        this.histogram = new Histogram('histogram-canvas');
         console.log("Canvas mapping established.");
 
         // Tap into the metronome loop to populate expectations

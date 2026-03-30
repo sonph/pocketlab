@@ -91,7 +91,7 @@ For now, perform manual verification through the development server, ensuring yo
 ### Visualization Suite ("The Lab")
 - [x] Implement the "Open Ended" Scatter Plot (Velocity vs Timing Offset)
 - [ ] Build the Limb Offset Matrix (Merged & Isolated modes)
-- [ ] Implement the Pocket Heatmap bell-curve
+- [x] Implement the Pocket Heatmap bell-curve
 
 ### Scoring & Success Metrics
 - [ ] Implement the Timing Score mathematical formula
