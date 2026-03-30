@@ -22,6 +22,10 @@
 
 ## 2. Advanced Metronome Engine ("The Pulse")
 
+* **Accuracy:** Must use `AudioContext.currentTime` with a lookahead scheduler to ensure precise timing independent of the main UI thread, maintaining rock-solid accuracy.
+* **Dynamic Tempo:** 
+  * The general BPM must be adjustable in real-time during playback without skipping beats or restarting the audio scheduler.
+  * **BPM Stepping:** The UI must provide -10, -5, -1, +1, +5, and +10 quick-step adjustment buttons around the main BPM display for rapid tuning.
 * **Time-Based Intervals:**
 
   * **Endless:** Free-play for jamming (Note: Scores are *not* recorded in history).
@@ -32,7 +36,10 @@
 
 * **Count-In Logic:** Default is **2 bars**. User configurable to 1 bar or Off.
 
-* **Voicing Options:** Standard Beep, Human Voice (1, 2, 3, 4), and "Woodblock."
+* **Voicing Options:**
+  * Standard Beep: Uses lighter, higher frequencies (e.g., 1200Hz/800Hz) to prevent the click from sounding "heavy."
+  * Human Voice (1, 2, 3, 4)
+  * "Woodblock"
 
 * **Rhythm Challenges:**
 
@@ -209,3 +216,7 @@ Make sure the app is performant and responsive.
 2. Always remove unnecessary imports, logging, comments before adding a commit.
 
 3. Follow Google style guides and best practices.
+
+4. Always update README after significant changes.
+
+5. Always update SPECS after additional requirements are added in the chats to keep it as a single source of truth for the project which will be used as a reference for future development.

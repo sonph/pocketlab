@@ -17,6 +17,29 @@
         <!-- Main Layout -->
         <div class="panel panel-left" id="panel-timer">
             <!-- Metronome/Timer -->
+            <div id="metronome-controls" style="margin-top: 2rem;">
+                <h2>Metronome Test</h2>
+                <div>
+                    <button id="play-btn">Play</button>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <label>BPM: </label>
+                    <div style="display: flex; align-items: center; margin-top: 0.5rem;">
+                        <button class="bpm-step" data-step="-10">-10</button>
+                        <button class="bpm-step" data-step="-5">-5</button>
+                        <button class="bpm-step" data-step="-1">-1</button>
+                        
+                        <input type="number" id="bpm-input" value="120" min="40" max="300" style="width: 70px; margin: 0 0.5rem; text-align: center;">
+                        
+                        <button class="bpm-step" data-step="1">+1</button>
+                        <button class="bpm-step" data-step="5">+5</button>
+                        <button class="bpm-step" data-step="10">+10</button>
+                    </div>
+                    <div style="margin-top: 0.5rem;">
+                        <input type="range" id="bpm-slider" value="120" min="40" max="300" style="width: 100%;">
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="panel panel-center" id="panel-lab">
             <!-- Active Visualization -->
