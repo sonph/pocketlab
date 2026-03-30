@@ -84,6 +84,23 @@ class PocketLabApp {
         bindSetting('setting-shakyRange', 'shakyRange', true);
         bindSetting('setting-shakyChance', 'shakyChance', true);
 
+        // Interactive Help System
+        const helpContent = document.getElementById('help-content');
+        const defaultHelpText = "Hover over any control or graph to see its description and goal here.";
+        const helpEls = document.querySelectorAll('[data-help]');
+        
+        if (helpContent) {
+            helpEls.forEach(el => {
+                el.addEventListener('mouseenter', (e) => {
+                    e.stopPropagation();
+                    helpContent.textContent = el.getAttribute('data-help');
+                });
+                el.addEventListener('mouseleave', () => {
+                    helpContent.textContent = defaultHelpText;
+                });
+            });
+        }
+
         // Timer Display Loop
         const timerDisplay = document.getElementById('timer-display');
         const barDisplay = document.getElementById('bar-display');

@@ -19,13 +19,13 @@
             <!-- Metronome/Timer -->
             <div id="metronome-controls" style="margin-top: 1rem; padding: 1rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
                 <h2>Metronome</h2>
-                <div style="margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;">
+                <div style="margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;" data-help="Click Play to start the metronome. The clock and bar counter will track your active session elapsed time.">
                     <button id="play-btn" style="padding: 0.5rem 1rem; font-size: 1.2rem; cursor: pointer;">Play</button>
                     <span id="timer-display" style="font-size: 1.2rem; font-variant-numeric: tabular-nums;">0:00</span>
                     <span id="bar-display" style="font-size: 1.2rem; font-variant-numeric: tabular-nums; color: var(--color-primary-accent);">BAR 1</span>
                 </div>
                 
-                <div style="margin-bottom: 1rem; background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 4px;">
+                <div style="margin-bottom: 1rem; background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 4px;" data-help="BPM (Beats Per Minute) sets the main tempo. Use the quick-step buttons or slider for rapid tuning.">
                     <label>BPM: </label>
                     <div style="display: flex; align-items: center; margin-top: 0.5rem;">
                         <button class="bpm-step" data-step="-10">-10</button>
@@ -45,7 +45,7 @@
                     <!-- Core Configs -->
                     <div>
                         <h3>Core Settings</h3>
-                        <div>
+                        <div data-help="Select 'Endless' to practice indefinitely, or set a focused duration filter which will auto-stop the clock.">
                             <label>Interval:</label>
                             <select id="setting-intervalMode">
                                 <option value="endless">Endless</option>
@@ -53,7 +53,7 @@
                                 <option value="3min">Stamina (3 min)</option>
                             </select>
                         </div>
-                        <div style="margin-top: 0.5rem;">
+                        <div style="margin-top: 0.5rem;" data-help="Sets the number of standard bars played before the session tracker and muting challenges actually begin.">
                             <label>Count-In:</label>
                             <select id="setting-countInBars">
                                 <option value="0">Off</option>
@@ -61,7 +61,7 @@
                                 <option value="2" selected>2 Bars</option>
                             </select>
                         </div>
-                        <div style="margin-top: 0.5rem;">
+                        <div style="margin-top: 0.5rem;" data-help="Select the click tone. 'Woodblock' is warmer, 'Voice' counts out loud, and 'Standard' is an electronic beep.">
                             <label>Voicing:</label>
                             <select id="setting-voicing">
                                 <option value="beep">Standard Beep</option>
@@ -69,7 +69,7 @@
                                 <option value="voice">Human Voice (Stubs)</option>
                             </select>
                         </div>
-                        <div style="margin-top: 0.5rem;">
+                        <div style="margin-top: 0.5rem;" data-help="Filters out specific beat pulses. 'Ands' only plays the offbeats; '2 and 4' forces backbeat feel.">
                             <label>Emphasis:</label>
                             <select id="setting-emphasis">
                                 <option value="on-beat">On-beat</option>
@@ -82,7 +82,7 @@
                     <!-- Challenges -->
                     <div>
                         <h3>Rhythm Challenges</h3>
-                        <div>
+                        <div data-help="Mutes the click to test your internal tempo keeping. Choose a Constant loop or let the engine randomize the silences.">
                             <label>Gap Radio Mode:</label>
                             <select id="setting-gapRadioMode">
                                 <option value="off">Off</option>
@@ -91,32 +91,39 @@
                                 <option value="random-bar">Random Bar</option>
                             </select>
                         </div>
-                        <div style="margin-top: 0.5rem;">
+                        <div style="margin-top: 0.5rem;" data-help="When Gap is set to 'Constant', configures the exact amount of full bars played vs muted.">
                             <label>Constant Config:</label>
                             <input type="number" id="setting-gapConstantOn" value="1" min="1" max="16" style="width: 40px;" title="Bars On"> On /
                             <input type="number" id="setting-gapConstantOff" value="1" min="1" max="16" style="width: 40px;" title="Bars Off"> Off
                         </div>
-                        <div style="margin-top: 0.5rem;">
+                        <div style="margin-top: 0.5rem;" data-help="When Gap is set to 'Random Beat', determines the percentage (%) chance any individual click will be randomly deleted.">
                             <label>Chaos (%):</label>
                             <input type="range" id="setting-gapChaos" value="50" min="0" max="100">
                         </div>
                         
-                        <div style="margin-top: 1rem;">
+                        <div style="margin-top: 1rem;" data-help="'The Bad Bassist'. Simulates playing with someone dragging or rushing by randomly offsetting the clicks.">
                             <label>
                                 <input type="checkbox" id="setting-shakyEnabled"> <b>Shaky Click</b>
                             </label>
                         </div>
-                        <div style="margin-top: 0.5rem;">
+                        <div style="margin-top: 0.5rem;" data-help="The maximum unsteadiness penalty applied to a shaky click in milliseconds.">
                             <label>Jitter Range (ms):</label>
                             <input type="number" id="setting-shakyRange" value="10" min="1" max="100" style="width: 50px;">
                         </div>
-                        <div style="margin-top: 0.5rem;">
+                        <div style="margin-top: 0.5rem;" data-help="The percentage (%) chance the engine will actually jitter a click on any given beat.">
                             <label>Chance (%):</label>
                             <input type="range" id="setting-shakyChance" value="50" min="0" max="100">
                         </div>
                     </div>
                 </div>
             </div>
+
+            <details open id="help-section" style="margin-top: 1rem; padding: 1rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
+                <summary style="cursor: pointer; font-size: 1.1rem; font-weight: bold; color: var(--color-primary-accent);">Help</summary>
+                <div id="help-content" style="margin-top: 1rem; font-style: italic; color: #94a3b8; min-height: 3rem;">
+                    Hover over any control or graph to see its description and goal here.
+                </div>
+            </details>
         </div>
         <div class="panel panel-center" id="panel-lab">
             <!-- Active Visualization -->

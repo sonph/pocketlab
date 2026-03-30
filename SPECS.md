@@ -115,9 +115,9 @@
 
 ## 5. UI, Settings & Help
 
-* **Global Layout:** Left Panel (Metronome/Timer), Center Panel (Active Visualization), Right Panel (Session Stats & Help section).
+* **Global Layout:** Left Panel (Metronome/Timer & Help system), Center Panel (Active Visualization), Right Panel (Session Stats).
 
-* **Interactive Help System:** A toggleable "Help Mode" in settings. When active, the help section displays the description and goal whenever the cursor hovers over a control or graph.
+* **Help System:** A collapsible Help section located directly below the metronome which is expanded by default. Its content dynamically updates to display the description and goal whenever the cursor hovers over a control or graph.
 
 ## 6. Success Metrics & Scoring
 
