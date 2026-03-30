@@ -35,12 +35,13 @@ class PocketLabApp {
         const bpmInput = document.getElementById('bpm-input');
         const bpmSlider = document.getElementById('bpm-slider');
         
-        if (playBtn) {
             playBtn.addEventListener('click', () => {
                 this.metronome.startStop();
-                playBtn.textContent = this.metronome.isPlaying ? 'Stop' : 'Play';
+                playBtn.textContent = this.metronome.isPlaying ? 'Stop' : 'Start';
+                if (this.visualizer) {
+                    this.visualizer.isPlaying = this.metronome.isPlaying;
+                }
             });
-        }
         
         const updateBpm = (val) => {
             let bpm = typeof val === 'string' ? parseInt(val, 10) : val;
@@ -137,6 +138,16 @@ class PocketLabApp {
                 }
             });
         }
+        
+        const fadeConfig = document.getElementById('setting-fadeSeconds');
+        const fadeDisplay = document.getElementById('display-fadeSeconds');
+        if (fadeConfig) {
+            fadeConfig.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                if (fadeDisplay) fadeDisplay.textContent = `${val.toFixed(1)}s`;
+                if (this.visualizer) this.visualizer.fadeSeconds = val;
+            });
+        }
 
         // Interactive Help System (Event Delegation)
         const mainHelpContent = document.getElementById('help-content');
@@ -167,7 +178,7 @@ class PocketLabApp {
         const barDisplay = document.getElementById('bar-display');
         
         this.metronome.onIntervalComplete = () => {
-            if (playBtn) playBtn.textContent = 'Play';
+            if (playBtn) playBtn.textContent = 'Start';
             if (timerDisplay) timerDisplay.textContent = 'DONE';
         };
 
@@ -190,8 +201,7 @@ class PocketLabApp {
                 if (timerDisplay) timerDisplay.textContent = `-IN: ${barsLeft} BAR(S)`;
                 if (barDisplay) barDisplay.textContent = 'BAR --';
             } else if (!this.metronome.isPlaying) {
-                if (timerDisplay && timerDisplay.textContent !== 'DONE') timerDisplay.textContent = '0:00';
-                if (barDisplay) barDisplay.textContent = 'BAR 1';
+                // Do not reset the visual display to 0:00 here so the last record holds
             }
             requestAnimationFrame(renderTimer);
         };
@@ -207,8 +217,11 @@ class PocketLabApp {
         // Tabs
         const tabSetup = document.getElementById('tab-btn-setup');
         const tabTroubleshoot = document.getElementById('tab-btn-troubleshoot');
+        const tabAdvanced = document.getElementById('tab-btn-advanced');
+        
         const viewSetup = document.getElementById('view-setup');
         const viewTroubleshoot = document.getElementById('view-troubleshoot');
+        const viewAdvanced = document.getElementById('view-advanced');
         
         const syncLoggingState = () => {
             if (modal.open && viewTroubleshoot.style.display !== 'none') {
@@ -233,32 +246,34 @@ class PocketLabApp {
             }
         };
 
-        if (tabSetup && viewSetup) {
-            tabSetup.addEventListener('click', () => {
-                viewSetup.style.display = 'block';
-                viewTroubleshoot.style.display = 'none';
-                tabSetup.style.fontWeight = 'bold';
-                tabSetup.style.color = 'white';
-                tabSetup.style.borderBottom = '2px solid var(--color-primary-accent)';
-                tabTroubleshoot.style.fontWeight = 'normal';
-                tabTroubleshoot.style.color = 'rgba(255,255,255,0.5)';
-                tabTroubleshoot.style.borderBottom = 'none';
-                syncLoggingState();
+        const setActiveTab = (activeId) => {
+            viewSetup.style.display = (activeId === 'setup') ? 'block' : 'none';
+            viewTroubleshoot.style.display = (activeId === 'troubleshoot') ? 'block' : 'none';
+            if (viewAdvanced) viewAdvanced.style.display = (activeId === 'advanced') ? 'block' : 'none';
+            
+            [[tabSetup, 'setup'], [tabTroubleshoot, 'troubleshoot'], [tabAdvanced, 'advanced']].forEach(([tab, id]) => {
+                if (!tab) return;
+                if (activeId === id) {
+                    tab.style.fontWeight = 'bold';
+                    tab.style.color = 'white';
+                    tab.style.borderBottom = '2px solid var(--color-primary-accent)';
+                } else {
+                    tab.style.fontWeight = 'normal';
+                    tab.style.color = 'rgba(255,255,255,0.5)';
+                    tab.style.borderBottom = 'none';
+                }
             });
-        }
+            syncLoggingState();
+        };
 
+        if (tabSetup && viewSetup) {
+            tabSetup.addEventListener('click', () => setActiveTab('setup'));
+        }
         if (tabTroubleshoot && viewTroubleshoot) {
-            tabTroubleshoot.addEventListener('click', () => {
-                viewSetup.style.display = 'none';
-                viewTroubleshoot.style.display = 'block';
-                tabTroubleshoot.style.fontWeight = 'bold';
-                tabTroubleshoot.style.color = 'white';
-                tabTroubleshoot.style.borderBottom = '2px solid var(--color-primary-accent)';
-                tabSetup.style.fontWeight = 'normal';
-                tabSetup.style.color = 'rgba(255,255,255,0.5)';
-                tabSetup.style.borderBottom = 'none';
-                syncLoggingState();
-            });
+            tabTroubleshoot.addEventListener('click', () => setActiveTab('troubleshoot'));
+        }
+        if (tabAdvanced && viewAdvanced) {
+            tabAdvanced.addEventListener('click', () => setActiveTab('advanced'));
         }
 
         if (btnSetup && modal) {
@@ -300,8 +315,10 @@ class PocketLabApp {
                 let val = parseInt(e.target.value);
                 if (isNaN(val)) val = 0;
                 this.midi.ghostThreshold = val;
+                if (this.visualizer) this.visualizer.minVelocity = val;
             });
             ghostThresh.value = this.midi.ghostThreshold;
+            if (this.visualizer) this.visualizer.minVelocity = this.midi.ghostThreshold;
         }
 
         if (ghostBtn) {
@@ -321,6 +338,7 @@ class PocketLabApp {
                     
                     const newThreshold = this.midi.ghostCalibrationMax > 0 ? this.midi.ghostCalibrationMax + 1 : this.midi.ghostThreshold;
                     this.midi.ghostThreshold = newThreshold;
+                    if (this.visualizer) this.visualizer.minVelocity = newThreshold;
                     if (ghostThresh) ghostThresh.value = newThreshold;
                     if (ghostStatus) {
                         ghostStatus.textContent = `Maximum ghost note velocity of ${this.midi.ghostCalibrationMax} set as ghost note velocity filter (Threshold: ${newThreshold})`;

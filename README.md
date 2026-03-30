@@ -89,7 +89,7 @@ For now, perform manual verification through the development server, ensuring yo
 - [x] Display real-time Elapsed Time and Bar counting
 
 ### Visualization Suite ("The Lab")
-- [ ] Implement the "Open Ended" Scatter Plot (Velocity vs Timing Offset)
+- [x] Implement the "Open Ended" Scatter Plot (Velocity vs Timing Offset)
 - [ ] Build the Limb Offset Matrix (Merged & Isolated modes)
 - [ ] Implement the Pocket Heatmap bell-curve
 

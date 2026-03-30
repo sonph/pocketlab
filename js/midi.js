@@ -2,7 +2,7 @@ export class MidiEngine {
     constructor() {
         this.midiAccess = null;
         this.inputs = [];
-        this.ghostThreshold = 1; // 0-127
+        this.ghostThreshold = 32; // 0-127
         this.latencySys = 0; // ms offset
         
         // Listeners for external hookups

@@ -18,6 +18,13 @@ export class Visualizer {
         this.measureMode = '16th'; // 'ms' or '16th'
         this.bpm = 120;
         
+        // Physics Config
+        this.fadeSeconds = 3.0;
+        this.virtualTime = 0;
+        this.lastRenderRealTime = performance.now();
+        this.isPlaying = false;
+        this.minVelocity = 1;
+        
         this.initResizeObserver();
         this.updateScaling(); // calculate immediately for correct axis rendering
         this.startRenderLoop();
@@ -36,12 +43,13 @@ export class Visualizer {
         observer.observe(this.canvas.parentElement);
     }
     
-    addHit(velocity, offsetMs, color, shape) {
+    addHit(velocity, offsetMs, color, shape, providedTimestamp = null) {
         this.hits.push({
             velocity,
             offsetMs,
             color,
-            shape
+            shape,
+            timestamp: providedTimestamp !== null ? providedTimestamp : this.virtualTime
         });
         
         if (this.hits.length > this.maxHits) {
@@ -91,10 +99,41 @@ export class Visualizer {
         const render = () => {
             if (this.width === 0) return requestAnimationFrame(render);
             
+            const realNow = performance.now();
+            const deltaMs = realNow - this.lastRenderRealTime;
+            this.lastRenderRealTime = realNow;
+            
+            if (this.isPlaying) {
+                this.virtualTime += deltaMs;
+            }
+            
             // Clear buffer
             this.ctx.clearRect(0, 0, this.width, this.height);
             
             const centerX = this.width / 2;
+            
+            // Draw Target Zone (64th note bounds) and 32nd note dotted lines
+            if (this.measureMode === '16th') {
+                // If max scaling is 16th note, then 32nd scale distance is 50%, 64th is 25%.
+                const range64Pixels = 0.25 * (this.width / 2);
+                const range32Pixels = 0.50 * (this.width / 2);
+
+                // Shaded 64th Note Target Zone
+                this.ctx.fillStyle = 'rgba(56, 189, 248, 0.1)';
+                this.ctx.fillRect(centerX - range64Pixels, 0, range64Pixels * 2, this.height);
+
+                // 32nd Note Dotted Lines
+                this.ctx.beginPath();
+                this.ctx.moveTo(centerX - range32Pixels, 0);
+                this.ctx.lineTo(centerX - range32Pixels, this.height);
+                this.ctx.moveTo(centerX + range32Pixels, 0);
+                this.ctx.lineTo(centerX + range32Pixels, this.height);
+                this.ctx.setLineDash([2, 4]);
+                this.ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                this.ctx.lineWidth = 1;
+                this.ctx.stroke();
+                this.ctx.setLineDash([]);
+            }
             
             // Draw Center 0ms Axis (Perfect Time)
             this.ctx.beginPath();
@@ -125,14 +164,18 @@ export class Visualizer {
             
             // Y-Axis (Velocity) Legend
             this.ctx.fillText('Velocity 127', centerX + 10, 20);
-            this.ctx.fillText('Velocity 0', centerX + 10, this.height - 10);
+            this.ctx.fillText(`Velocity ${this.minVelocity}`, centerX + 10, this.height - 10);
 
-            // Render Hits
+            // Render Hits smoothly synced with time
             for (let i = 0; i < this.hits.length; i++) {
                 const hit = this.hits[i];
-                const ageFactor = i / this.hits.length; // 0.0 (oldest) to 1.0 (newest)
-                // Opacity curve: exponential decay so newest are bright, mid are dim, older are ghostly
-                const opacity = Math.pow(ageFactor, 3) * 0.9 + 0.1;
+                
+                const ageSecs = (this.virtualTime - hit.timestamp) / 1000.0;
+                if (ageSecs > this.fadeSeconds) continue; // Note has fully dissolved
+                
+                // Opacity curve: exponential decay (inverse cubic) for high-performance fluid tail
+                const opacityPercent = 1.0 - (ageSecs / this.fadeSeconds);
+                const opacity = Math.pow(opacityPercent, 3);
                 
                 // X = Offset. Center is 0. 
                 // Positive offset (Late) visually draws RIGHT (X-coord is bigger)
@@ -143,11 +186,19 @@ export class Visualizer {
                 
                 const x = centerX + (xPercent * (this.width / 2));
 
-                // Y = Velocity (0 to 127) -> bounded vertically
-                // Velocity 127 is top (y=0 padding), Velocity 0 is bottom
+                // Y = Velocity (this.minVelocity to 127) -> bounded vertically
+                // Velocity 127 is top (y=0 padding), Velocity minVelocity is bottom
                 const yPad = 40;
                 const plottableHeight = this.height - (yPad * 2);
-                const y = this.height - yPad - ((hit.velocity / 127) * plottableHeight);
+                
+                let velRange = 127 - this.minVelocity;
+                if (velRange < 1) velRange = 1; // Prevent div by 0
+                
+                let velAdjusted = hit.velocity - this.minVelocity;
+                if (velAdjusted < 0) velAdjusted = 0;
+                if (velAdjusted > velRange) velAdjusted = velRange;
+                
+                const y = this.height - yPad - ((velAdjusted / velRange) * plottableHeight);
                 
                 this.drawShape(x, y, hit.shape, hit.color, opacity);
             }

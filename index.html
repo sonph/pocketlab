@@ -18,7 +18,7 @@
         <div id="top-bar" class="surface" style="position: relative; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; z-index: 10;">
             
             <div style="display: flex; align-items: center; gap: 1.5rem;">
-                <button id="play-btn" data-help="Click Play to start the metronome. The clock and bar counter will track your active session elapsed time." style="padding: 0.5rem 1rem; font-size: 1.2rem; cursor: pointer; background: var(--color-primary-accent); border: none; font-weight: bold; border-radius: 4px; color: black;">Play</button>
+                <button id="play-btn" data-help="Click Start to run the metronome. The clock and bar counter will track your active session elapsed time." style="padding: 0.5rem 1rem; font-size: 1.2rem; cursor: pointer; background: var(--color-primary-accent); border: none; font-weight: bold; border-radius: 4px; color: black;">Start</button>
                 <div style="display: flex; gap: 1rem; align-items: baseline;">
                     <span id="timer-display" data-help="Active elapsed time tracking." style="font-size: 1.2rem; font-variant-numeric: tabular-nums;">0:00</span>
                     <span id="bar-display" data-help="Current measure count in the active setting interval." style="font-size: 1.2rem; font-variant-numeric: tabular-nums; color: var(--color-primary-accent);">BAR 1</span>
@@ -118,7 +118,7 @@
         </div>
 
         <!-- Main Visualization Layer -->
-        <div class="panel-lab surface" id="panel-lab" style="flex: 1; position: relative; overflow: hidden; margin-top: 1rem; border-color: rgba(255,255,255,0.1) !important;" data-help="Open Ended Scatter Plot. X-Axis: Timing Error. Y-Axis: Velocity. The center vertical dashed line is perfect pocket. To the right is Late, to the left is Early. Notes fade as new hits arrive.">
+        <div class="panel-lab surface" id="panel-lab" style="flex: 1; position: relative; overflow: hidden; margin-top: 1rem; border-color: rgba(255,255,255,0.1) !important;" data-help="Open Ended Scatter Plot. X-Axis: Timing Error. Y-Axis: Velocity. The center dashed line is perfect pocket, with a shaded 64th note target zone. To the right is Late, to the left is Early. Inverse decaying notes fade based on your Advanced tuning.">
             <!-- Active Visualization -->
             <canvas id="lab-canvas" style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
         </div>
@@ -140,6 +140,7 @@
         <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
             <button id="tab-btn-setup" style="background: none; border: none; color: white; font-size: 1.1rem; cursor: pointer; border-bottom: 2px solid var(--color-primary-accent); padding-bottom: 0.5rem; font-weight: bold;">Mapping & Calibration</button>
             <button id="tab-btn-troubleshoot" style="background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.1rem; cursor: pointer; padding-bottom: 0.5rem;">Troubleshoot</button>
+            <button id="tab-btn-advanced" style="background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.1rem; cursor: pointer; padding-bottom: 0.5rem;">Advanced Config</button>
         </div>
         
         <!-- Setup View Focus -->
@@ -152,7 +153,7 @@
             <div style="margin-bottom: 2rem;" data-help="Velocity threshold (0-127). Any physical pad strike that registers a velocity softer than this numeric value will be ignored. Useful for preventing vibrations or false-triggers from displaying.">
                 <h3>Ghost Note Filter</h3>
                 <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem;">
-                    <input type="number" id="hw-ghost-threshold" min="0" max="127" value="1" style="width: 80px; padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                    <input type="number" id="hw-ghost-threshold" min="0" max="127" value="32" style="width: 80px; padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
                     <button id="btn-calibrate-ghost" data-help="Click this and strike your pads as softly as possible. The engine records your loudest 'ghost note'. Click 'Finish' to automatically set the filter exactly 1 step above it." style="padding: 0.3rem 1rem; cursor: pointer; background: var(--color-primary-accent); border: none; border-radius: 4px; font-weight: bold; color: black;">Calibrate</button>
                     <div id="ghost-status" style="font-size: 0.9rem; color: #94a3b8; margin-left: 0.5rem;"></div>
                 </div>
@@ -211,6 +212,17 @@
             <!-- Limit to 5000 messages via JS logic inside app -->
             <div id="hw-console" style="background: black; padding: 1rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); height: 400px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; color: #a3e635; display: flex; flex-direction: column-reverse; white-space: pre-wrap;">
                 <div>[System] Troubleshooter console initialized. Waiting for events...</div>
+            </div>
+        </div>
+        
+        <!-- Advanced View Focus -->
+        <div id="view-advanced" style="display: none;">
+            <div style="margin-bottom: 2rem;" data-help="Adjusts how long hits survive on the scatter plot before dissolving. Uses high-performance real-time logarithmic decay instead of structural CSS transitions for 60FPS fluid renders.">
+                <label style="display: block; font-weight: bold; margin-bottom: 0.5rem; color: var(--color-primary-accent); font-size: 1.1rem;">Scatter Plot Deterioration Speed</label>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-top: 1rem;">
+                    <input type="range" id="setting-fadeSeconds" value="3.0" min="0.5" max="10.0" step="0.5" style="flex: 1;">
+                    <span id="display-fadeSeconds" style="font-family: monospace; font-size: 1.1rem; min-width: 40px; text-align: right;">3.0s</span>
+                </div>
             </div>
         </div>
     </dialog>
