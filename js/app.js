@@ -148,6 +148,17 @@ class PocketLabApp {
                 if (this.visualizer) this.visualizer.fadeSeconds = val;
             });
         }
+        
+        const btnToggleHelp = document.getElementById('btn-toggle-help');
+        const helpFooter = document.getElementById('help-footer');
+        if (btnToggleHelp && helpFooter) {
+            btnToggleHelp.addEventListener('click', () => {
+                const isHidden = helpFooter.style.display === 'none';
+                helpFooter.style.display = isHidden ? 'flex' : 'none';
+                btnToggleHelp.textContent = isHidden ? 'Hide Help ▽' : 'Show Help △';
+                btnToggleHelp.style.color = isHidden ? '#94a3b8' : 'white';
+            });
+        }
 
         // Interactive Help System (Event Delegation)
         const mainHelpContent = document.getElementById('help-content');
