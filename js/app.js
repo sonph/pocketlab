@@ -21,6 +21,13 @@ class PocketLabApp {
         this.setupMetronomeUI();
         this.setupMidi();
         this.setupCanvas();
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        this.isDebug = urlParams.get('debug') === 'true';
+        if (this.isDebug) {
+            console.log("DEBUG MODE ACTIVE: Simulating 'Money Beat' on Play.");
+            this.setupDebugSimulator();
+        }
     }
 
     setupMetronomeUI() {
@@ -529,9 +536,96 @@ class PocketLabApp {
              // Queue management
              this.expectedHits.push(scheduleObj.time);
              
+             // If debug is on, money beat uses 8th notes, so we must track 8th note targets to grade against
+             if (this.isDebug) {
+                 const beatLengthSecs = 60.0 / this.metronome.bpm;
+                 this.expectedHits.push(scheduleObj.time + (beatLengthSecs / 2.0));
+                 // Also sort expectedHits just in case
+                 this.expectedHits.sort((a,b) => a - b);
+             }
+             
              // Clear out old expectations to prevent memory leak
              const nowAudio = this.metronome.audioContext.currentTime;
              this.expectedHits = this.expectedHits.filter(t => t > nowAudio - 2.0); // keep 2 seconds of history
+        };
+    }
+
+    setupDebugSimulator() {
+        // Pre-configure realistic pad mapping values
+        this.midi.mappings = {
+            'kick': { name: 'Kick', noteIds: [36], color: '#3b82f6', shape: 'circle' },
+            'snare': { name: 'Snare', noteIds: [38], color: '#ef4444', shape: 'square' },
+            'hihat': { name: 'Hi-Hat', noteIds: [42], color: '#eab308', shape: 'triangle' },
+            'tom1': { name: 'Tom 1', noteIds: [48], color: '#10b981', shape: 'circle' },
+            'tom2': { name: 'Tom 2', noteIds: [45], color: '#8b5cf6', shape: 'circle' },
+            'ride': { name: 'Ride', noteIds: [51], color: '#14b8a6', shape: 'diamond' }
+        };
+        this.renderMappingTable();
+
+        // Let's hook into the internal metronome scheduler to generate real-time bot hits
+        const baseScheduler = this.metronome.scheduleNote.bind(this.metronome);
+        
+        let activeBarCounter = 0;
+        let lastBarProcessed = -1;
+
+        this.metronome.scheduleNote = (beatNumber16th, time) => {
+            baseScheduler(beatNumber16th, time);
+            
+            // Only fire if Metronome is actively playing
+            if (!this.metronome.isPlaying) return;
+            
+            // Reset bot state if the user restarted playback
+            if (this.metronome.currentBarTotal === 0 && beatNumber16th === 0) {
+                activeBarCounter = 0;
+                lastBarProcessed = -1;
+            }
+            
+            // Only play after the count-in
+            const isCountInPhase = this.metronome.currentBarTotal < this.metronome.countInBars;
+            if (isCountInPhase) return;
+            
+            // Track how many active bars the bot has played
+            if (this.metronome.currentBarTotal !== lastBarProcessed) {
+                if (lastBarProcessed !== -1) activeBarCounter++;
+                lastBarProcessed = this.metronome.currentBarTotal;
+            }
+            
+            // Limit to 4 bars
+            if (activeBarCounter >= 4) return;
+            
+            // Money Beat Definition:
+            // Kick on 1 & 3 (16th intervals: 0, 8)
+            // Snare on 2 & 4 (16th intervals: 4, 12)
+            // Hihat on all 8ths (16th intervals: 0, 2, 4, 6, 8, 10, 12, 14)
+            let notesToPlay = [];
+            if (beatNumber16th === 0 || beatNumber16th === 8) notesToPlay.push({ id: 'kick', vel: 110 });
+            if (beatNumber16th === 4 || beatNumber16th === 12) notesToPlay.push({ id: 'snare', vel: 125 });
+            if (beatNumber16th % 2 === 0) notesToPlay.push({ id: 'hihat', vel: 85 });
+            
+            for (let note of notesToPlay) {
+                // Introduce varying note accuracy: bounded random offset
+                // Hi-Hats tighter, Snare looser etc. We use +/- 30ms total variance
+                let accuracyOffsetSecs = (Math.random() * 0.050) - 0.025; 
+                if (note.id === 'snare') accuracyOffsetSecs += 0.010; // slightly late backbeat style
+                
+                const physicalTimeSecs = time + accuracyOffsetSecs;
+                
+                // Calculate actual real-world JS timer delay to match the Web Audio API time
+                const nowSecs = this.metronome.audioContext.currentTime;
+                const delayMs = (physicalTimeSecs - nowSecs) * 1000;
+                
+                if (delayMs > 0) {
+                    setTimeout(() => {
+                        if (this.midi.onHit) {
+                            this.midi.onHit({
+                                instrument: note.id,
+                                velocity: Math.floor(note.vel + (Math.random()*16 - 8)),
+                                timestamp: performance.now()
+                            });
+                        }
+                    }, delayMs);
+                }
+            }
         };
     }
 }
