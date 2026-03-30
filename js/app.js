@@ -1,4 +1,5 @@
 import { Metronome } from './metronome.js';
+import { MidiEngine } from './midi.js';
 
 /**
  * Pocket Lab Core Application
@@ -8,6 +9,7 @@ import { Metronome } from './metronome.js';
 class PocketLabApp {
     constructor() {
         this.metronome = new Metronome();
+        this.midi = new MidiEngine();
         this.init();
     }
 
@@ -137,23 +139,242 @@ class PocketLabApp {
         requestAnimationFrame(renderTimer);
     }
 
-    setupMidi() {
-        // Initialize Web MIDI API
-        if (navigator.requestMIDIAccess) {
-            navigator.requestMIDIAccess({ sysex: false })
-                .then(this.onMIDISuccess.bind(this), this.onMIDIFailure.bind(this));
-        } else {
-            console.warn("Web MIDI API not supported in this browser.");
+    async setupMidi() {
+        // Modal UI
+        const btnSetup = document.getElementById('btn-hardware-setup');
+        const modal = document.getElementById('modal-hardware');
+        const btnClose = document.getElementById('btn-close-modal');
+        
+        // Tabs
+        const tabSetup = document.getElementById('tab-btn-setup');
+        const tabTroubleshoot = document.getElementById('tab-btn-troubleshoot');
+        const viewSetup = document.getElementById('view-setup');
+        const viewTroubleshoot = document.getElementById('view-troubleshoot');
+        
+        const syncLoggingState = () => {
+            if (modal.open && viewTroubleshoot.style.display !== 'none') {
+                this.midi.isLoggingEnabled = true;
+            } else {
+                this.midi.isLoggingEnabled = false;
+            }
+        };
+
+        if (tabSetup && viewSetup) {
+            tabSetup.addEventListener('click', () => {
+                viewSetup.style.display = 'block';
+                viewTroubleshoot.style.display = 'none';
+                tabSetup.style.fontWeight = 'bold';
+                tabSetup.style.color = 'white';
+                tabSetup.style.borderBottom = '2px solid var(--color-primary-accent)';
+                tabTroubleshoot.style.fontWeight = 'normal';
+                tabTroubleshoot.style.color = 'rgba(255,255,255,0.5)';
+                tabTroubleshoot.style.borderBottom = 'none';
+                syncLoggingState();
+            });
         }
+
+        if (tabTroubleshoot && viewTroubleshoot) {
+            tabTroubleshoot.addEventListener('click', () => {
+                viewSetup.style.display = 'none';
+                viewTroubleshoot.style.display = 'block';
+                tabTroubleshoot.style.fontWeight = 'bold';
+                tabTroubleshoot.style.color = 'white';
+                tabTroubleshoot.style.borderBottom = '2px solid var(--color-primary-accent)';
+                tabSetup.style.fontWeight = 'normal';
+                tabSetup.style.color = 'rgba(255,255,255,0.5)';
+                tabSetup.style.borderBottom = 'none';
+                syncLoggingState();
+            });
+        }
+
+        if (btnSetup && modal) {
+            btnSetup.addEventListener('click', () => {
+                modal.showModal();
+                syncLoggingState();
+            });
+        }
+        if (btnClose && modal) {
+            btnClose.addEventListener('click', () => {
+                modal.close();
+                syncLoggingState();
+            });
+        }
+        
+        // Init Engine
+        const success = await this.midi.init();
+        const statusEl = document.getElementById('midi-status');
+        if (statusEl) {
+            if (success && this.midi.inputs.length > 0) {
+                statusEl.textContent = `Connected! Listening to ${this.midi.inputs.length} devices.`;
+                statusEl.style.color = 'var(--color-success)';
+            } else if (success) {
+                statusEl.textContent = `Initialized, but no MIDI inputs detected. Please connect a device via USB/Bluetooth.`;
+                statusEl.style.color = 'var(--color-warning)';
+            } else {
+                statusEl.textContent = `Error: Web MIDI Access Denied or Not Supported.`;
+                statusEl.style.color = 'var(--color-critical)';
+            }
+        }
+
+        // Ghost Note Config
+        const ghostThresh = document.getElementById('hw-ghost-threshold');
+        const ghostDisp = document.getElementById('hw-ghost-display');
+        if (ghostThresh) {
+            ghostThresh.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value);
+                this.midi.ghostThreshold = val;
+                if (ghostDisp) ghostDisp.textContent = val;
+            });
+        }
+
+        // Live Mapping
+        this.renderMappingTable();
+        this.midi.onLiveMapComplete = (instrument, noteIdsArray) => {
+            this.renderMappingTable();
+        };
+
+        // Calibration logic
+        const btnCalibration = document.getElementById('btn-start-calibration');
+        const calStatus = document.getElementById('calibration-status');
+        
+        if (btnCalibration) {
+            btnCalibration.addEventListener('click', () => {
+                if (this.metronome.isPlaying) this.metronome.startStop(); // force stop
+                this.metronome.onNoteScheduled = null; 
+                this.midi.startCalibration();
+                calStatus.textContent = "Calibrating... wait for tick to strike.";
+                
+                // Expose expectations to MidiEngine
+                this.metronome.onNoteScheduled = (scheduleObj) => {
+                    if (!this.midi.isCalibrating) return;
+                    const nowAudio = this.metronome.audioContext.currentTime;
+                    const offsetAudioSecs = scheduleObj.time - nowAudio;
+                    const expectedHitPerf = performance.now() + (offsetAudioSecs * 1000);
+                    this.midi.expectCalibrationHit(expectedHitPerf);
+                };
+                
+                this.midi.onCalibrationHit = (offset, avg, remaining) => {
+                    calStatus.textContent = `Hit! Raw: ${offset.toFixed(1)}ms | Avg: ${avg.toFixed(1)}ms | Left: ${remaining}`;
+                    if (remaining <= 0) {
+                        calStatus.textContent = `Calibration Complete. L_sys applied: ${this.midi.latencySys.toFixed(1)}ms.`;
+                        this.metronome.startStop(); // Kill metronome
+                        this.metronome.onNoteScheduled = null;
+                        btnCalibration.disabled = false;
+                    }
+                };
+
+                btnCalibration.disabled = true;
+                this.metronome.setBpm(60); 
+                this.metronome.startStop(); 
+            });
+        }
+
+        this.midi.onHit = (hitDetails) => {
+             // For testing
+             console.log("Valid Pad Hit ->", hitDetails);
+        };
+
+        // Logging & Troubleshooter logic
+        const levelSel = document.getElementById('log-level-filter');
+        const btnClearLog = document.getElementById('btn-clear-log');
+        const hwConsole = document.getElementById('hw-console');
+
+        if (levelSel) {
+            levelSel.addEventListener('change', (e) => {
+                this.midi.logLevel = parseInt(e.target.value);
+            });
+            this.midi.logLevel = parseInt(levelSel.value);
+        }
+
+        if (btnClearLog && hwConsole) {
+            btnClearLog.addEventListener('click', () => {
+                hwConsole.innerHTML = '<div>[System] Console cleared. Waiting for events...</div>';
+            });
+        }
+
+        this.midi.onMidiLog = (msg) => {
+            if (!hwConsole) return;
+            const logEl = document.createElement('div');
+            logEl.textContent = msg;
+            
+            // Because flex-direction is column-reverse, appending places it at the topological bottom but visually top
+            hwConsole.prepend(logEl);
+            
+            // Limit to 5000 messages
+            while (hwConsole.children.length > 5000) {
+                hwConsole.removeChild(hwConsole.lastChild);
+            }
+        };
     }
 
-    onMIDISuccess(midiAccess) {
-        console.log("MIDI Access granted.");
-        // Setup MIDI logic later
-    }
+    renderMappingTable() {
+        const tbody = document.getElementById('mapping-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        
+        for (const [id, config] of Object.entries(this.midi.mappings)) {
+            const tr = document.createElement('tr');
+            const noteIdsStr = config.noteIds.join(', ');
+            tr.innerHTML = `
+                <td style="padding: 0.5rem; text-transform: capitalize;">${config.name}</td>
+                <td style="padding: 0.5rem;">
+                    <input type="text" id="map-note-${id}" value="${noteIdsStr}" style="width: 100%; max-width: 120px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;" placeholder="38, 40">
+                </td>
+                <td style="padding: 0.5rem; display: flex; gap: 0.5rem;">
+                    <button class="live-map-btn" data-id="${id}" style="cursor:pointer; padding: 0.2rem 0.5rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
+                        ${this.midi.liveMapTarget === id ? '🎧...' : 'Listen'}
+                    </button>
+                    <button class="clear-map-btn" data-id="${id}" style="cursor:pointer; padding: 0.2rem; border-radius: 4px; background: rgba(239, 68, 68, 0.2); color: var(--color-critical); border: 1px solid var(--color-critical);" title="Clear Notes">
+                        🗑️
+                    </button>
+                </td>
+                <td style="padding: 0.5rem;">
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="color" id="map-col-${id}" value="${config.color}" style="border: none; background: none; width: 30px; height: 30px; cursor: pointer;">
+                        <select id="map-shape-${id}" style="background: rgba(0,0,0,0.3); color: white; padding: 0.2rem; border-radius: 4px;">
+                            <option value="circle" ${config.shape==='circle'?'selected':''}>Circle</option>
+                            <option value="square" ${config.shape==='square'?'selected':''}>Square</option>
+                            <option value="triangle" ${config.shape==='triangle'?'selected':''}>Triangle</option>
+                            <option value="diamond" ${config.shape==='diamond'?'selected':''}>Diamond</option>
+                        </select>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            
+            const nInput = document.getElementById(`map-note-${id}`);
+            if (nInput) nInput.addEventListener('change', (e) => {
+                // Parse "38, 40, 42" into [38, 40, 42]
+                const valStr = e.target.value;
+                const arr = valStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+                this.midi.updateMap(id, arr, null, null);
+                this.renderMappingTable(); 
+            });
+            
+            const colInput = document.getElementById(`map-col-${id}`);
+            if (colInput) colInput.addEventListener('change', (e) => this.midi.updateMap(id, null, null, e.target.value));
+            
+            const shapeSel = document.getElementById(`map-shape-${id}`);
+            if (shapeSel) shapeSel.addEventListener('change', (e) => this.midi.updateMap(id, null, e.target.value, null));
+        }
 
-    onMIDIFailure(error) {
-        console.error("Failed to access MIDI devices.", error);
+        const liveBtns = document.querySelectorAll('.live-map-btn');
+        liveBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const mapId = e.currentTarget.dataset.id;
+                this.midi.listenForMap(mapId);
+                this.renderMappingTable(); 
+            });
+        });
+
+        const clearBtns = document.querySelectorAll('.clear-map-btn');
+        clearBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const mapId = e.currentTarget.dataset.id;
+                this.midi.clearMap(mapId);
+                this.renderMappingTable();
+            });
+        });
     }
 
     setupCanvas() {

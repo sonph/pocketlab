@@ -72,10 +72,10 @@ For now, perform manual verification through the development server, ensuring yo
 ## 📋 Development Roadmap
 
 ### Core Technical Architecture
-- [ ] Implement Web MIDI API capture and hardware input detection
-- [ ] Build the Calibration Layer for system latency sync
-- [ ] Create MIDI Mapping interface (Live Registration & Manual Table)
-- [ ] Build global Ghost Note Velocity Filter
+- [x] Implement Web MIDI API capture and hardware input detection
+- [x] Build the Calibration Layer for system latency sync
+- [x] Create MIDI Mapping interface (Live Registration & Manual Table)
+- [x] Build global Ghost Note Velocity Filter
 
 ### Advanced Metronome Engine ("The Pulse")
 - [x] Configure AudioContext lookahead scheduler for rock-solid timing

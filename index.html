@@ -124,14 +124,96 @@
                     Hover over any control or graph to see its description and goal here.
                 </div>
             </details>
-        </div>
         <div class="panel panel-center" id="panel-lab">
             <!-- Active Visualization -->
         </div>
         <div class="panel panel-right surface" id="panel-stats">
-            <!-- Session Stats & Help -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>Session Stats</h2>
+                <button id="btn-hardware-setup" style="padding: 0.5rem 1rem; cursor: pointer; border-radius: 4px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3);">⚙️ HW Setup</button>
+            </div>
+            <div id="stats-content" style="flex: 1; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.5);">
+                (Stats engine pending)
+            </div>
         </div>
     </div>
+
+    <!-- Hardware Setup Modal -->
+    <dialog id="modal-hardware" style="background: var(--color-surface); color: white; padding: 2rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; max-width: 800px; width: 90%; margin: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem;">
+            <h2 style="margin: 0;">Device Setup & Calibration</h2>
+            <button id="btn-close-modal" style="cursor: pointer; background: transparent; color: white; border: none; font-size: 1.5rem;">&times;</button>
+        </div>
+
+        <!-- Tab Controls -->
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
+            <button id="tab-btn-setup" style="background: none; border: none; color: white; font-size: 1.1rem; cursor: pointer; border-bottom: 2px solid var(--color-primary-accent); padding-bottom: 0.5rem; font-weight: bold;">Mapping & Calibration</button>
+            <button id="tab-btn-troubleshoot" style="background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.1rem; cursor: pointer; padding-bottom: 0.5rem;">Troubleshoot</button>
+        </div>
+        
+        <!-- Setup View Focus -->
+        <div id="view-setup">
+            <div style="margin-bottom: 2rem;">
+                <h3>MIDI Connection</h3>
+                <div id="midi-status" style="color: var(--color-warning);">Waiting for browser Web MIDI permission...</div>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <h3 data-help="Velocity threshold. Any physical pad hit softer than this value will be ignored.">Ghost Note Filter</h3>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <input type="range" id="hw-ghost-threshold" min="0" max="127" value="1" style="flex: 1;">
+                    <span id="hw-ghost-display" style="width: 30px;">1</span>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <h3>Input Mapping Table</h3>
+                <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">Provide multiple Note IDs separated by a comma (e.g. "38, 40"). Unintended multi-zone inputs can be corrected by pressing 'Clear'.</p>
+                <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                            <th style="padding: 0.5rem; width: 20%;">Instrument</th>
+                            <th style="padding: 0.5rem; width: 35%;">Note IDs</th>
+                            <th style="padding: 0.5rem; width: 25%;">Live Map</th>
+                            <th style="padding: 0.5rem; width: 20%;">Visuals</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mapping-tbody">
+                        <!-- JS will populate -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div>
+                <h3>System Calibration (Latency Sync)</h3>
+                <p style="font-size: 0.9rem; color: #94a3b8; font-style: italic;">Strike any mapped pad exactly simultaneously with the pulse to calculate your system latency offset.</p>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-top: 1rem;">
+                    <button id="btn-start-calibration" style="padding: 0.5rem 1rem; cursor: pointer; background: var(--color-primary-accent); border: none; border-radius: 4px; font-weight: bold; color: black;">Start Calibration (8 Hits)</button>
+                    <div id="calibration-status" style="font-variant-numeric: tabular-nums;">Ready. L_sys: 0ms</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Troubleshoot View Focus -->
+        <div id="view-troubleshoot" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div>
+                    <label style="margin-right: 0.5rem;">Log Level Filter:</label>
+                    <select id="log-level-filter" style="background: rgba(0,0,0,0.3); color: white; padding: 0.3rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                        <option value="1">1 - Note On</option>
+                        <option value="2">2 - All Standard MIDI Events</option>
+                        <option value="3">3 - Everything (Raw)</option>
+                    </select>
+                </div>
+                <button id="btn-clear-log" style="padding: 0.3rem 0.6rem; cursor: pointer; background: rgba(239, 68, 68, 0.2); border: 1px solid var(--color-critical); color: var(--color-critical); border-radius: 4px;">Clear Console</button>
+            </div>
+            
+            <!-- Limit to 5000 messages via JS logic inside app -->
+            <div id="hw-console" style="background: black; padding: 1rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); height: 400px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; color: #a3e635; display: flex; flex-direction: column-reverse; white-space: pre-wrap;">
+                <div>[System] Troubleshooter console initialized. Waiting for events...</div>
+            </div>
+        </div>
+    </dialog>
     
     <!-- Scripts -->
     <script type="module" src="js/app.js"></script>

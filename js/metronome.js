@@ -205,6 +205,9 @@ export class Metronome {
 
         if (gainValue > 0.0) {
             this.playVoice(isDownbeat, beatIndex, scheduledTime);
+            if (this.onNoteScheduled) {
+                this.onNoteScheduled({ time: scheduledTime, isDownbeat });
+            }
         }
     }
 
