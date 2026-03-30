@@ -1,0 +1,67 @@
+/* Pocket Lab - Design System (Obsidian Midnight) */
+
+:root {
+    /* Palette */
+    --color-bg: #0F172A; /* Slate 900 */
+    --color-surface: #1E293B; /* Slate 800 */
+    --color-primary-accent: #38BDF8; /* Sky 400 */
+    --color-success: #10B981; /* Emerald 500 */
+    --color-warning: #F59E0B; /* Amber 500 */
+    --color-critical: #EF4444; /* Red 500 */
+
+    /* Typography */
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* Borders */
+    --border-radius-xl: 12px;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--color-bg);
+    color: #FFFFFF;
+    font-family: var(--font-mono);
+}
+
+#app {
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+    padding: 1rem;
+    gap: 1rem;
+}
+
+.panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-left {
+    flex: 1; /* Metronome/Timer */
+}
+
+.panel-center {
+    flex: 2; /* Active Visualization (The Lab) */
+}
+
+.panel-right {
+    flex: 1; /* Session Stats & Help */
+}
+
+/* Base surface component for cards/panels */
+.surface {
+    background-color: var(--color-surface);
+    border-radius: var(--border-radius-xl);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+}
+
+/* Glow effects for active state */
+.glow-primary {
+    box-shadow: 0 0 15px var(--color-primary-accent);
+}

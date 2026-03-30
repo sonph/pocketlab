@@ -1,0 +1,18 @@
+# Node and npm 
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build files
+dist/
+build/
+.cache/
+
+# Editor/OS specifics
+.vscode/
+.idea/
+*.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
