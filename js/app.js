@@ -210,6 +210,11 @@ class PocketLabApp {
                         this.localConfig[prop] = e.target.value;
                         this.saveConfig();
                     }
+                    
+                    if (prop === 'feedbackDifficultyMode') {
+                        if (this.visualizer) this.visualizer.setDifficultyMode(e.target.value);
+                        if (this.histogram) this.histogram.setDifficultyMode(e.target.value);
+                    }
                 });
                 this[prop] = el.value;
             }
@@ -981,6 +986,9 @@ class PocketLabApp {
         this.histogram = new Histogram('histogram-canvas');
         this.timeline = new TimelineVisualizer('timeline-canvas');
         this.limbMatrix = new LimbMatrixVisualizer('matrix-canvas');
+        
+        this.visualizer.setDifficultyMode(this.feedbackDifficultyMode);
+        this.histogram.setDifficultyMode(this.feedbackDifficultyMode);
         const winSel = document.getElementById('setting-timeline-window');
         const gridSel = document.getElementById('setting-timeline-grid');
         this.timeline.updateConfig(winSel ? winSel.value : 2, this.metronome.bpm, this.metronome.tsCount, gridSel ? gridSel.value : 4);

@@ -17,6 +17,7 @@ export class Visualizer {
         // 16th Beat Logic
         this.measureMode = '16th'; // 'ms' or '16th'
         this.bpm = 120;
+        this.difficultyMode = 'medium';
         
         // Physics Config
         this.fadeSeconds = 3.0;
@@ -65,6 +66,11 @@ export class Visualizer {
     setMeasureMode(mode) {
         this.measureMode = mode;
         this.updateScaling();
+        this.needsRender = true;
+    }
+    
+    setDifficultyMode(mode) {
+        this.difficultyMode = mode;
         this.needsRender = true;
     }
     
@@ -131,15 +137,20 @@ export class Visualizer {
             
             const centerX = this.width / 2;
             
-            // Draw Target Zone (64th note bounds) and 32nd note dotted lines
-            if (this.measureMode === '16th') {
-                // If max scaling is 16th note, then 32nd scale distance is 50%, 64th is 25%.
-                const range64Pixels = 0.25 * (this.width / 2);
-                const range32Pixels = 0.50 * (this.width / 2);
+            // Calculate Good/Perfect Zone width based on difficulty
+            let diffFactor = 0.5;
+            if (this.difficultyMode === 'easy') diffFactor = 0.8;
+            else if (this.difficultyMode === 'hard') diffFactor = 0.2;
+            const goodZoneMs = (60000 / this.bpm) / 8.0 * diffFactor;
+            const goodZonePixels = (goodZoneMs / this.currentMaxTiming) * (this.width / 2);
+            
+            // Shaded Target Zone (Matches Audio Feedback Good/Perfect window)
+            this.ctx.fillStyle = 'rgba(56, 189, 248, 0.1)';
+            this.ctx.fillRect(centerX - goodZonePixels, 0, goodZonePixels * 2, this.height);
 
-                // Shaded 64th Note Target Zone
-                this.ctx.fillStyle = 'rgba(56, 189, 248, 0.1)';
-                this.ctx.fillRect(centerX - range64Pixels, 0, range64Pixels * 2, this.height);
+            // Draw 32nd note dotted lines if in 16th mode
+            if (this.measureMode === '16th') {
+                const range32Pixels = 0.50 * (this.width / 2);
 
                 // 32nd Note Dotted Lines
                 this.ctx.beginPath();
@@ -200,8 +211,6 @@ export class Visualizer {
                 // Positive offset (Late) visually draws RIGHT (X-coord is bigger)
                 // Negative offset (Early) visually draws LEFT (X-coord is smaller)
                 let xPercent = hit.offsetMs / this.currentMaxTiming; // -1.0 to 1.0
-                if (xPercent > 1.0) xPercent = 1.0;
-                if (xPercent < -1.0) xPercent = -1.0;
                 
                 const x = centerX + (xPercent * (this.width / 2));
 

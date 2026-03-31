@@ -14,6 +14,7 @@ export class Histogram {
         this.currentMaxTiming = this.baseMaxTiming;
         this.measureMode = '16th'; // 'ms' or '16th'
         this.bpm = 120;
+        this.difficultyMode = 'medium';
         
         // Rendering constraints
         this.bucketCount = 80; // Total number of vertical bars rendering the curve
@@ -56,6 +57,11 @@ export class Histogram {
     setMeasureMode(mode) {
         this.measureMode = mode;
         this.updateScaling();
+        this.needsRender = true;
+    }
+    
+    setDifficultyMode(mode) {
+        this.difficultyMode = mode;
         this.needsRender = true;
     }
     
@@ -105,11 +111,14 @@ export class Histogram {
             this.ctx.setLineDash([]);
             
             // Draw Target Zone Highlights bridging from the Scatter Plot
-            if (this.measureMode === '16th') {
-                const range64Pixels = 0.25 * (this.width / 2);
-                this.ctx.fillStyle = 'rgba(56, 189, 248, 0.05)';
-                this.ctx.fillRect(centerX - range64Pixels, 0, range64Pixels * 2, this.height);
-            }
+            let diffFactor = 0.5;
+            if (this.difficultyMode === 'easy') diffFactor = 0.8;
+            else if (this.difficultyMode === 'hard') diffFactor = 0.2;
+            const goodZoneMs = (60000 / this.bpm) / 8.0 * diffFactor;
+            const goodZonePixels = (goodZoneMs / this.currentMaxTiming) * (this.width / 2);
+            
+            this.ctx.fillStyle = 'rgba(56, 189, 248, 0.05)';
+            this.ctx.fillRect(centerX - goodZonePixels, 0, goodZonePixels * 2, this.height);
             
             // ----------------------------------------------------
             // 1. Process Data into Frequency Buckets
@@ -129,9 +138,8 @@ export class Histogram {
                 
                 let bucketIndex = Math.floor(shifted / msPerBucket);
                 
-                // Clamp outliers clipping heavily outside the visual scope into the edges
-                if (bucketIndex < 0) bucketIndex = 0;
-                if (bucketIndex >= this.bucketCount) bucketIndex = this.bucketCount - 1;
+                // Drop outliers that fall completely outside the visual scope rather than stacking them on the edges
+                if (bucketIndex < 0 || bucketIndex >= this.bucketCount) continue;
                 
                 buckets[bucketIndex]++;
                 if (buckets[bucketIndex] > localPeak) {
