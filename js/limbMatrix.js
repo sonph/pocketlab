@@ -1,0 +1,223 @@
+export class LimbMatrixVisualizer {
+    constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        if (!this.canvas) return;
+        this.ctx = this.canvas.getContext('2d');
+        
+        this.width = 0;
+        this.height = 0;
+        
+        this.bpm = 120;
+        this.limit32ndMs = 62.5; 
+        
+        this.pendingWindows = {}; 
+        this.points = [];
+        this.maxPoints = 150;
+        
+        this.fadeSeconds = 3.0;
+        this.virtualTime = 0;
+        this.lastRenderRealTime = performance.now();
+        this.isPlaying = false;
+        
+        this.initResizeObserver();
+        this.updateScaling();
+        this.startRenderLoop();
+    }
+    
+    initResizeObserver() {
+        const observer = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                this.width = entry.contentRect.width;
+                this.height = entry.contentRect.height;
+                this.canvas.width = this.width * window.devicePixelRatio;
+                this.canvas.height = this.height * window.devicePixelRatio;
+                this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            }
+        });
+        observer.observe(this.canvas.parentElement);
+    }
+
+    setBpm(bpm) {
+        this.bpm = bpm;
+        this.updateScaling();
+    }
+
+    updateScaling() {
+        const msPerBeat = 60000 / this.bpm;
+        // 32nd note = beat / 8
+        this.limit32ndMs = msPerBeat / 8;
+    }
+
+    clear() {
+        this.points = [];
+        this.pendingWindows = {};
+    }
+
+    addHit(instrument, offsetMs, expectedTargetId, velocity, color, shape) {
+        if (!['hihat', 'kick', 'snare'].includes(instrument)) return;
+        
+        // Strict boundary evaluation (must fall within \u00B132nd note of expected click)
+        if (Math.abs(offsetMs) > this.limit32ndMs) return;
+
+        const winId = typeof expectedTargetId === 'number' ? expectedTargetId.toFixed(6) : expectedTargetId.toString();
+        if (!this.pendingWindows[winId]) {
+            this.pendingWindows[winId] = { hihat: null, kick: null, snare: null, timeObj: performance.now() };
+        }
+        
+        let pending = this.pendingWindows[winId];
+        if (instrument === 'hihat') {
+            pending.hihat = offsetMs;
+        } else if (instrument === 'kick') {
+            pending.kick = { offsetMs, color, shape, timestamp: this.virtualTime };
+        } else if (instrument === 'snare') {
+            pending.snare = { offsetMs, color, shape, timestamp: this.virtualTime };
+        }
+        
+        this.evaluateWindow(winId);
+        this.purgeOldWindows();
+    }
+
+    evaluateWindow(winId) {
+        const pending = this.pendingWindows[winId];
+        if (!pending) return;
+        
+        if (pending.hihat !== null) {
+            let matched = false;
+            // Evaluates Kick pairing
+            if (pending.kick !== null) {
+                this.commitPoint(pending.hihat, pending.kick.offsetMs, pending.kick.color, pending.kick.shape, pending.kick.timestamp);
+                pending.kick = null;
+                matched = true;
+            }
+            // Evaluates Snare pairing
+            if (pending.snare !== null) {
+                this.commitPoint(pending.hihat, pending.snare.offsetMs, pending.snare.color, pending.snare.shape, pending.snare.timestamp);
+                pending.snare = null;
+                matched = true;
+            }
+        }
+    }
+
+    commitPoint(x, y, color, shape, timestamp) {
+        this.points.push({ x, y, color, shape, timestamp });
+        if (this.points.length > this.maxPoints) {
+            this.points.shift();
+        }
+    }
+
+    purgeOldWindows() {
+        // Cleanup expected time maps beyond 2 full seconds trailing
+        const nowDOM = performance.now();
+        for (const [winId, pending] of Object.entries(this.pendingWindows)) {
+            if (nowDOM - pending.timeObj > 2000) {
+                delete this.pendingWindows[winId];
+            }
+        }
+    }
+
+    startRenderLoop() {
+        const render = () => {
+            if (this.width === 0) return requestAnimationFrame(render);
+            
+            this.ctx.clearRect(0, 0, this.width, this.height);
+            
+            const now = performance.now();
+            if (this.isPlaying) {
+                const dt = (now - this.lastRenderRealTime) / 1000.0;
+                this.virtualTime += dt;
+            }
+            this.lastRenderRealTime = now;
+
+            const cx = this.width / 2;
+            const cy = this.height / 2;
+
+            // Matrix Grid
+            this.ctx.lineWidth = 1;
+
+            // \u00B132nd note boundaries visual indicator
+            this.ctx.fillStyle = 'rgba(255,255,255,0.02)';
+            this.ctx.fillRect(0, 0, this.width, this.height);
+
+            // Centered Crosshairs (0, 0)
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            this.ctx.setLineDash([4, 4]); // Dotted Crosshair
+            this.ctx.beginPath();
+            this.ctx.moveTo(cx, 0);
+            this.ctx.lineTo(cx, this.height);
+            this.ctx.moveTo(0, cy);
+            this.ctx.lineTo(this.width, cy);
+            this.ctx.stroke();
+            this.ctx.setLineDash([]);
+            
+            // X-Axis Sub-Labels (Hi-Hat)
+            this.ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            this.ctx.font = '10px JetBrains Mono';
+            this.ctx.textAlign = 'right';
+            this.ctx.fillText('-32nd (Early)', this.width - 10, cy + 15);
+            this.ctx.textAlign = 'left';
+            this.ctx.fillText('+32nd (Late)', 10, cy + 15);
+            
+            // Y-Axis Sub-Labels (Kick/Snare)
+            this.ctx.textAlign = 'right';
+            this.ctx.fillText('Hat', cx - 5, this.height - 10);
+            this.ctx.fillText('(Kick/Snr Early)', cx - 5, 15);
+
+            // Points
+            for (let i = this.points.length - 1; i >= 0; i--) {
+                const p = this.points[i];
+                let ageSecs = this.virtualTime - p.timestamp;
+                if (ageSecs < 0) ageSecs = 0;
+                
+                let alpha = 1.0 - (ageSecs / this.fadeSeconds);
+                if (alpha <= 0) {
+                    this.points.splice(i, 1);
+                    continue;
+                }
+                
+                // Opacity curve: Math.pow to make it fade slower organically
+                alpha = Math.max(0.1, Math.min(1.0, Math.pow(alpha, 0.4)));
+
+                // Map value: offsetMs ranges [-limit, +limit] mapped to [0, width/height]
+                // Negative (early) = plotted up/left
+                // Positive (late) = plotted down/right
+                // wait, visually standard cartesian: right is positive X, top is positive Y
+                // So if hit is late (+ ms), Hat X should be RIGHT
+                const mappedX = cx + ((p.x / this.limit32ndMs) * (this.width / 2.0));
+                // If Kick is late (+ ms), Y should be BOTTOM (inverted screen coords) or TOP? 
+                // Cartesian standard: Y positive is UP. Screen coordinates Y positive is DOWN.
+                // Let's do positive (Late) = bottom
+                const mappedY = cy + ((p.y / this.limit32ndMs) * (this.height / 2.0));
+
+                this.ctx.fillStyle = p.color;
+                this.ctx.globalAlpha = alpha;
+                
+                const size = 6;
+                this.ctx.beginPath();
+                if (p.shape === 'circle') {
+                    this.ctx.arc(mappedX, mappedY, size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                } else if (p.shape === 'square') {
+                    this.ctx.fillRect(mappedX - size, mappedY - size, size * 2, size * 2);
+                } else if (p.shape === 'triangle') {
+                    this.ctx.moveTo(mappedX, mappedY - size);
+                    this.ctx.lineTo(mappedX + size, mappedY + size);
+                    this.ctx.lineTo(mappedX - size, mappedY + size);
+                    this.ctx.fill();
+                } else if (p.shape === 'diamond') {
+                    this.ctx.moveTo(mappedX, mappedY - size);
+                    this.ctx.lineTo(mappedX + size, mappedY);
+                    this.ctx.lineTo(mappedX, mappedY + size);
+                    this.ctx.lineTo(mappedX - size, mappedY);
+                    this.ctx.fill();
+                } else {
+                    this.ctx.arc(mappedX, mappedY, size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+                this.ctx.globalAlpha = 1.0;
+            }
+            
+            requestAnimationFrame(render);
+        };
+        requestAnimationFrame(render);
+    }
+}

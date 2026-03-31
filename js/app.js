@@ -3,6 +3,7 @@ import { MidiEngine } from './midi.js';
 import { Visualizer } from './visualizer.js';
 import { Histogram } from './histogram.js';
 import { TimelineVisualizer } from './timeline.js';
+import { LimbMatrixVisualizer } from './limbMatrix.js';
 
 /**
  * Pocket Lab Core Application
@@ -16,6 +17,7 @@ class PocketLabApp {
         this.visualizer = null;
         this.histogram = null;
         this.timeline = null;
+        this.limbMatrix = null;
         this.expectedHits = []; // Queue of structural times the user *should* hit
         this.init();
     }
@@ -45,6 +47,10 @@ class PocketLabApp {
                 if (this.visualizer) {
                     this.visualizer.isPlaying = this.metronome.isPlaying;
                 }
+                if (this.limbMatrix) {
+                    this.limbMatrix.isPlaying = this.metronome.isPlaying;
+                    if (this.metronome.isPlaying) this.limbMatrix.clear();
+                }
                 if (this.histogram && this.metronome.isPlaying) {
                     this.histogram.clear();
                 }
@@ -61,6 +67,7 @@ class PocketLabApp {
             this.metronome.setBpm(bpm);
             if (this.visualizer) this.visualizer.setBpm(bpm);
             if (this.histogram) this.histogram.setBpm(bpm);
+            if (this.limbMatrix) this.limbMatrix.setBpm(bpm);
             const winSel = document.getElementById('setting-timeline-window');
             const gridSel = document.getElementById('setting-timeline-grid');
             if (this.timeline) this.timeline.updateConfig(winSel ? winSel.value : 2, bpm, this.metronome.tsCount, gridSel ? gridSel.value : 4);
@@ -520,9 +527,21 @@ class PocketLabApp {
                 }
             }
             
+            
             // Expected time physically arriving from drum
             const expectedPerf = expectedHitPerfTime(closestHit);
             const offsetMs = now - expectedPerf;
+
+            if (this.limbMatrix && this.metronome.isPlaying && this.metronome.sessionStartTime) {
+                this.limbMatrix.addHit(
+                    hitDetails.instrument,
+                    offsetMs,
+                    closestHit,
+                    hitDetails.velocity,
+                    hitDetails.config.color,
+                    hitDetails.config.shape
+                );
+            }
             
             // Only plot if it's within a very wide logical threshold (e.g. they aren't just jamming randomly while click is running)
             if (Math.abs(offsetMs) < 400) {
@@ -660,6 +679,7 @@ class PocketLabApp {
         this.visualizer = new Visualizer('lab-canvas');
         this.histogram = new Histogram('histogram-canvas');
         this.timeline = new TimelineVisualizer('timeline-canvas');
+        this.limbMatrix = new LimbMatrixVisualizer('matrix-canvas');
         const winSel = document.getElementById('setting-timeline-window');
         const gridSel = document.getElementById('setting-timeline-grid');
         this.timeline.updateConfig(winSel ? winSel.value : 2, this.metronome.bpm, this.metronome.tsCount, gridSel ? gridSel.value : 4);
