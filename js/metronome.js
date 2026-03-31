@@ -45,7 +45,7 @@ export class Metronome {
 
         // Buffers
         this.voiceBuffers = {}; 
-        this.loadVoiceSamples();
+        this.voiceLoaded = false;
 
         // State trackers
         this.currentTick = 0; // Out of (tsCount * 12)
@@ -63,20 +63,23 @@ export class Metronome {
     }
 
     async loadVoiceSamples() {
-        const files = ['1.wav', '2.wav', '3.wav', '4.wav'];
-        for (let i = 0; i < files.length; i++) {
-            /* 
-            // Stubbed for future asset delivery 
-            try {
-                const response = await fetch(`assets/sounds/${files[i]}`);
-                const arrayBuffer = await response.arrayBuffer();
-                if (this.audioContext) {
-                    this.voiceBuffers[i] = await this.audioContext.decodeAudioData(arrayBuffer);
+        if (this.voiceLoaded || !this.audioContext) return;
+        this.voiceLoaded = true;
+
+        const voices = ['female', 'male'];
+        const beats = ['one', 'two', 'three', 'four'];
+
+        for (let voice of voices) {
+            this.voiceBuffers[voice] = {};
+            for (let i = 0; i < beats.length; i++) {
+                try {
+                    const response = await fetch(`assets/sounds/metronome/${voice} ${beats[i]}.wav`);
+                    const arrayBuffer = await response.arrayBuffer();
+                    this.voiceBuffers[voice][i] = await this.audioContext.decodeAudioData(arrayBuffer);
+                } catch (e) {
+                    console.warn(`Could not load voice sample ${voice} ${beats[i]}.wav`, e);
                 }
-            } catch (e) {
-                console.warn(`Could not load voice sample ${files[i]}`);
             }
-            */
         }
     }
 
@@ -91,6 +94,7 @@ export class Metronome {
         } else {
             if (!this.audioContext) {
                 this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.loadVoiceSamples();
             }
             if (this.audioContext.state === 'suspended') {
                 this.audioContext.resume();
@@ -285,16 +289,21 @@ export class Metronome {
     playVoice(isDownbeat, beatIndex, time, volume = 1.0) {
         if (volume <= 0.0) return;
         
-        if (this.voicing === 'voice' && this.voiceBuffers[beatIndex]) { 
-            const source = this.audioContext.createBufferSource();
-            const envelope = this.audioContext.createGain();
-            source.buffer = this.voiceBuffers[beatIndex];
+        if (this.voicing === 'female-voice' || this.voicing === 'male-voice') { 
+            const voiceType = this.voicing.split('-')[0]; // 'female' or 'male'
+            const bufIndex = beatIndex % 4; // Cycles through one, two, three, four
             
-            source.connect(envelope);
-            envelope.connect(this.masterGainNode);
-            envelope.gain.value = volume;
+            if (this.voiceBuffers[voiceType] && this.voiceBuffers[voiceType][bufIndex]) {
+                const source = this.audioContext.createBufferSource();
+                const envelope = this.audioContext.createGain();
+                source.buffer = this.voiceBuffers[voiceType][bufIndex];
             
-            source.start(time);
+                source.connect(envelope);
+                envelope.connect(this.masterGainNode);
+                envelope.gain.value = volume;
+                
+                source.start(time);
+            }
         } else if (this.voicing === 'woodblock') { 
             const osc = this.audioContext.createOscillator();
             const envelope = this.audioContext.createGain();
