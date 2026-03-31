@@ -87,18 +87,17 @@ export class LimbMatrixVisualizer {
         if (!pending) return;
         
         if (pending.hihat !== null) {
-            let matched = false;
-            // Evaluates Kick pairing
+            // Plot Kick vs Hat on the X-axis (Y = 0)
             if (pending.kick !== null) {
-                this.commitPoint(pending.hihat, pending.kick.offsetMs, pending.kick.color, pending.kick.shape, pending.kick.timestamp);
+                const kickOffsetRel = pending.kick.offsetMs - pending.hihat;
+                this.commitPoint(kickOffsetRel, 0, pending.kick.color, pending.kick.shape, pending.kick.timestamp);
                 pending.kick = null;
-                matched = true;
             }
-            // Evaluates Snare pairing
+            // Plot Snare vs Hat on the Y-axis (X = 0)
             if (pending.snare !== null) {
-                this.commitPoint(pending.hihat, pending.snare.offsetMs, pending.snare.color, pending.snare.shape, pending.snare.timestamp);
+                const snareOffsetRel = pending.snare.offsetMs - pending.hihat;
+                this.commitPoint(0, snareOffsetRel, pending.snare.color, pending.snare.shape, pending.snare.timestamp);
                 pending.snare = null;
-                matched = true;
             }
         }
     }
@@ -160,7 +159,7 @@ export class LimbMatrixVisualizer {
             this.ctx.fillStyle = 'rgba(255,255,255,0.02)';
             this.ctx.fillRect(0, 0, this.width, this.height);
 
-            // Centered Crosshairs (0, 0)
+            // Centered Crosshairs (0, 0) representing the Hi-Hat
             this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
             this.ctx.setLineDash([4, 4]); // Dotted Crosshair
             this.ctx.beginPath();
@@ -171,18 +170,18 @@ export class LimbMatrixVisualizer {
             this.ctx.stroke();
             this.ctx.setLineDash([]);
             
-            // X-Axis Sub-Labels (Hi-Hat)
+            // X-Axis Sub-Labels (Kick vs Hat)
             this.ctx.fillStyle = 'rgba(255,255,255,0.3)';
             this.ctx.font = '10px JetBrains Mono';
             this.ctx.textAlign = 'right';
-            this.ctx.fillText('-32nd (Early)', this.width - 10, cy + 15);
+            this.ctx.fillText('+32nd (Kick Late)', this.width - 10, cy + 15);
             this.ctx.textAlign = 'left';
-            this.ctx.fillText('+32nd (Late)', 10, cy + 15);
+            this.ctx.fillText('-32nd (Kick Early)', 10, cy + 15);
             
-            // Y-Axis Sub-Labels (Kick/Snare)
+            // Y-Axis Sub-Labels (Snare vs Hat)
             this.ctx.textAlign = 'right';
-            this.ctx.fillText('Hat', cx - 5, this.height - 10);
-            this.ctx.fillText('(Kick/Snr Early)', cx - 5, 15);
+            this.ctx.fillText('(Snare Late)', cx - 5, this.height - 10);
+            this.ctx.fillText('(Snare Early)', cx - 5, 15);
 
             // Points
             for (let i = this.points.length - 1; i >= 0; i--) {
