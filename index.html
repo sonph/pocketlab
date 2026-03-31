@@ -213,8 +213,15 @@
             </div>
 
             <div style="margin-bottom: 2rem;">
-                <h3>Input Mapping Table</h3>
-                <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">Provide multiple Note IDs separated by a comma (e.g. "38, 40"). Unintended multi-zone inputs can be corrected by pressing 'Clear'.</p>
+                <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div>
+                        <h3>Input Mapping Table</h3>
+                        <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic; margin-bottom: 0;">Provide multiple Note IDs separated by a comma (e.g. "38, 40"). Unintended multi-zone inputs can be corrected by pressing 'Clear'.</p>
+                    </div>
+                    <div>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--color-warning); font-weight: bold; font-size: 0.9rem;" data-help="When enabled, any strikes configured as a 'Ride' will automatically be drawn and evaluated exactly as if they were the Hi-Hat."><input type="checkbox" id="setting-merge-ride"> Merge Ride to Hi-Hat</label>
+                    </div>
+                </div>
                 <table style="width: 100%; text-align: left; border-collapse: collapse;">
                     <thead>
                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">

@@ -30,7 +30,8 @@ export class MidiEngine {
         this.mappings = {
             'kick': { noteIds: [36], shape: 'circle', color: '#10B981', name: 'Kick' },
             'snare': { noteIds: [38], shape: 'square', color: '#F59E0B', name: 'Snare' },
-            'hihat': { noteIds: [42], shape: 'triangle', color: '#38BDF8', name: 'Hi-Hat' }
+            'hihat': { noteIds: [42], shape: 'triangle', color: '#38BDF8', name: 'Hi-Hat' },
+            'ride': { noteIds: [51], shape: 'square', color: '#8B5CF6', name: 'Ride' }
         };
     }
 

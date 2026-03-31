@@ -370,6 +370,11 @@ class PocketLabApp {
             if (this.visualizer) this.visualizer.minVelocity = this.midi.ghostThreshold;
         }
 
+        const mergeRideChk = document.getElementById('setting-merge-ride');
+        if (mergeRideChk) {
+            mergeRideChk.addEventListener('change', () => this.renderMappingTable());
+        }
+
         if (ghostBtn) {
             ghostBtn.addEventListener('click', () => {
                 if (!this.midi.isCalibratingGhostNotes) {
@@ -445,6 +450,12 @@ class PocketLabApp {
         }
 
         this.midi.onHit = (hitDetails) => {
+            const isMergedRide = document.getElementById('setting-merge-ride') && document.getElementById('setting-merge-ride').checked;
+            if (isMergedRide && hitDetails.instrument === 'ride') {
+                hitDetails.instrument = 'hihat';
+                hitDetails.config = this.midi.mappings['hihat'];
+            }
+
             // Find the closest expected hit in our rolling window
             if (this.expectedHits.length === 0 || !this.visualizer) return;
             
@@ -529,8 +540,12 @@ class PocketLabApp {
         for (const [id, config] of Object.entries(this.midi.mappings)) {
             const tr = document.createElement('tr');
             const noteIdsStr = config.noteIds.join(', ');
+            const isMergedRide = id === 'ride' && document.getElementById('setting-merge-ride') && document.getElementById('setting-merge-ride').checked;
+            const disabledState = isMergedRide ? 'disabled' : '';
+            const opacityState = isMergedRide ? 'opacity: 0.3; pointer-events: none;' : '';
+
             tr.innerHTML = `
-                <td style="padding: 0.5rem; text-transform: capitalize;">${config.name}</td>
+                <td style="padding: 0.5rem; text-transform: capitalize;">${config.name} ${isMergedRide ? '(Merged)' : ''}</td>
                 <td style="padding: 0.5rem;">
                     <input type="text" id="map-note-${id}" data-help="Comma separated numeric Note IDs for this drum zone (e.g. 38, 40)" value="${noteIdsStr}" style="width: 100%; max-width: 120px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;" placeholder="38, 40">
                 </td>
@@ -544,8 +559,8 @@ class PocketLabApp {
                 </td>
                 <td style="padding: 0.5rem;">
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <input type="color" id="map-col-${id}" value="${config.color}" style="border: none; background: none; width: 30px; height: 30px; cursor: pointer;">
-                        <select id="map-shape-${id}" style="background: rgba(0,0,0,0.3); color: white; padding: 0.2rem; border-radius: 4px;">
+                        <input type="color" id="map-col-${id}" value="${config.color}" style="border: none; background: none; width: 30px; height: 30px; cursor: pointer; ${opacityState}" ${disabledState}>
+                        <select id="map-shape-${id}" style="background: rgba(0,0,0,0.3); color: white; padding: 0.2rem; border-radius: 4px; ${opacityState}" ${disabledState}>
                             <option value="circle" ${config.shape==='circle'?'selected':''}>Circle</option>
                             <option value="square" ${config.shape==='square'?'selected':''}>Square</option>
                             <option value="triangle" ${config.shape==='triangle'?'selected':''}>Triangle</option>
