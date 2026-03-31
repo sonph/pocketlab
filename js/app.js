@@ -311,25 +311,6 @@ class PocketLabApp {
             });
         }
         
-        const graphScaleSel = document.getElementById('setting-graphScale');
-        if (graphScaleSel) {
-            if (this.localConfig && this.localConfig.graphScale !== undefined) {
-                graphScaleSel.value = this.localConfig.graphScale;
-            }
-            graphScaleSel.addEventListener('change', (e) => {
-                if (this.visualizer) {
-                    this.visualizer.setMeasureMode(e.target.value);
-                }
-                if (this.histogram) {
-                    this.histogram.setMeasureMode(e.target.value);
-                }
-                if (this.localConfig) {
-                    this.localConfig.graphScale = e.target.value;
-                    this.saveConfig();
-                }
-            });
-        }
-        
         const fadeConfig = document.getElementById('setting-fadeSeconds');
         const fadeDisplay = document.getElementById('display-fadeSeconds');
         if (fadeConfig) {

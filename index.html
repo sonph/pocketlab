@@ -29,11 +29,13 @@
 
             <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 8px;" data-help="BPM (Beats Per Minute) sets the main tempo. Use the quick-step buttons for rapid tuning.">
                 <span style="font-weight: bold;">BPM</span>
+                <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="-10">-10</button>
                 <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="-5">-5</button>
                 <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="-1">-1</button>
                 <input type="number" id="bpm-input" value="120" min="40" max="300" style="width: 60px; text-align: center; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: white; padding: 0.2rem;">
                 <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="1">+1</button>
                 <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="5">+5</button>
+                <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="10">+10</button>
             </div>
             
             <!-- Master Volume -->
@@ -70,10 +72,6 @@
                     <option value="ands">Ands</option>
                     <option value="2and4">2 & 4</option>
                 </select>
-                <label style="color: var(--color-primary-accent); margin-left: 0.5rem; font-size: 0.85rem; text-transform: uppercase;">Graph Scale:</label>
-                <select id="setting-graphScale" title="Graph Scale" data-help="Choose the scale for the Scatter Plot timing error Y-Axis. '16th Beat' bounds strictly to a perfect 16th note timing threshold." style="padding: 0.3rem; background: rgba(56, 189, 248, 0.2); color: white; border: 1px solid var(--color-primary-accent); border-radius: 4px; font-weight: bold;">
-                    <option value="ms">Auto MS</option>
-                    <option value="16th" selected>16th Beat Max</option>
                 </select>
             </div>
 
