@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,62 +13,101 @@
     <!-- Styles -->
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
     <div id="app">
         <!-- Top Horizontal Dashboard -->
-        <div id="top-bar" class="surface" style="position: relative; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; z-index: 10;">
-            
+        <div id="top-bar" class="surface"
+            style="position: relative; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; z-index: 10;">
+
             <div style="display: flex; align-items: center; gap: 1.5rem;">
-                <button id="play-btn" data-help="Click Start to run the metronome. The clock and bar counter will track your active session elapsed time." style="padding: 0.5rem 1rem; font-size: 1.2rem; cursor: pointer; background: var(--color-primary-accent); border: none; font-weight: bold; border-radius: 4px; color: black;">Start</button>
+                <button id="play-btn"
+                    data-help="Click Start to run the metronome. The clock and bar counter will track your active session elapsed time."
+                    style="padding: 0.5rem 1rem; font-size: 1.2rem; cursor: pointer; background: var(--color-primary-accent); border: none; font-weight: bold; border-radius: 4px; color: black;">Start</button>
                 <div style="display: flex; gap: 1rem; align-items: baseline;">
-                    <span id="timer-display" data-help="Active elapsed time tracking." style="font-size: 1.2rem; font-variant-numeric: tabular-nums;">0:00</span>
-                    <span id="bar-display" data-help="Current measure count in the active setting interval." style="font-size: 1.2rem; font-variant-numeric: tabular-nums; color: var(--color-primary-accent);">BAR 1</span>
-                    <div style="width: 1px; height: 1.2rem; background: rgba(255,255,255,0.2); align-self: center; margin: 0 0.5rem;"></div>
-                    <span id="score-display" data-help="Live Average Timing Score for the current session stream." style="font-size: 1.2rem; font-weight: bold; font-variant-numeric: tabular-nums; color: var(--color-warning);">--% AVG</span>
+                    <span id="timer-display" data-help="Active elapsed time tracking."
+                        style="font-size: 0.9rem; font-variant-numeric: tabular-nums;">0:00</span>
+                    <span id="bar-display" data-help="Current measure count in the active setting interval."
+                        style="font-size: 0.9rem; font-variant-numeric: tabular-nums; color: var(--color-primary-accent);">BAR
+                        1</span>
+                    <div
+                        style="width: 1px; height: 1.2rem; background: rgba(255,255,255,0.2); align-self: center; margin: 0 0.5rem;">
+                    </div>
+                    <span id="score-display" data-help="Live Average Timing Score for the current session stream."
+                        style="font-size: 0.9rem; font-weight: bold; font-variant-numeric: tabular-nums; color: var(--color-warning);">--%
+                        AVG</span>
                 </div>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 8px;" data-help="BPM (Beats Per Minute) sets the main tempo. Use the quick-step buttons for rapid tuning.">
+            <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 8px;"
+                data-help="BPM (Beats Per Minute) sets the main tempo. Use the quick-step buttons for rapid tuning.">
                 <span style="font-weight: bold;">BPM</span>
-                <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="-10">-10</button>
-                <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="-5">-5</button>
-                <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="-1">-1</button>
-                <input type="number" id="bpm-input" value="120" min="40" max="300" style="width: 60px; text-align: center; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: white; padding: 0.2rem;">
-                <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="1">+1</button>
-                <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="5">+5</button>
-                <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="10">+10</button>
+                <button class="bpm-step"
+                    style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);"
+                    data-step="-10">-10</button>
+                <button class="bpm-step"
+                    style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);"
+                    data-step="-5">-5</button>
+                <button class="bpm-step"
+                    style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);"
+                    data-step="-1">-1</button>
+                <input type="number" id="bpm-input" value="120" min="40" max="300"
+                    style="width: 60px; text-align: center; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: white; padding: 0.2rem;">
+                <button class="bpm-step"
+                    style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);"
+                    data-step="1">+1</button>
+                <button class="bpm-step"
+                    style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);"
+                    data-step="5">+5</button>
+                <button class="bpm-step"
+                    style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);"
+                    data-step="10">+10</button>
             </div>
-            
+
             <!-- Master Volume -->
-            <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 8px;" data-help="Global metronome audio output volume. Drag past 100% to boost gain.">
+            <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 8px;"
+                data-help="Global metronome audio output volume. Drag past 100% to boost gain.">
                 <span>🔊</span>
-                <input type="range" id="setting-master-volume" value="100" min="0" max="300" style="width: 80px; align-self: center; margin-top: 0.2rem;">
+                <input type="range" id="setting-master-volume" value="100" min="0" max="300"
+                    style="width: 80px; align-self: center; margin-top: 0.2rem;">
             </div>
 
             <!-- Core Settings -->
             <div style="display: flex; align-items: center; gap: 0.8rem;">
-                <div style="display: flex; align-items: center; background: rgba(0,0,0,0.3); padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); font-weight: bold; gap: 0.3rem;" title="Time Signature" data-help="Set the Time Signature (Beats per Bar / Subdivision). Hits resolve primarily back to default quarter note pulses.">
-                    <input type="number" id="setting-ts-count" value="4" min="1" max="32" style="width: 30px; background: transparent; color: white; border: none; text-align: right; outline: none; -moz-appearance: textfield; appearance: textfield;">
+                <div style="display: flex; align-items: center; background: rgba(0,0,0,0.3); padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); font-weight: bold; gap: 0.3rem;"
+                    title="Time Signature"
+                    data-help="Set the Time Signature (Beats per Bar / Subdivision). Hits resolve primarily back to default quarter note pulses.">
+                    <input type="number" id="setting-ts-count" value="4" min="1" max="32"
+                        style="width: 30px; background: transparent; color: white; border: none; text-align: right; outline: none; -moz-appearance: textfield; appearance: textfield;">
                     <span style="color: rgba(255,255,255,0.5);">/</span>
-                    <input type="number" id="setting-ts-subdiv" value="4" min="1" max="32" style="width: 30px; background: transparent; color: white; border: none; outline: none; -moz-appearance: textfield; appearance: textfield;">
+                    <input type="number" id="setting-ts-subdiv" value="4" min="1" max="32"
+                        style="width: 30px; background: transparent; color: white; border: none; outline: none; -moz-appearance: textfield; appearance: textfield;">
                 </div>
-                <select id="setting-intervalMode" title="Interval Mode" data-help="Select 'Endless' to practice indefinitely, or set a focused duration filter which will auto-stop the clock." style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                <select id="setting-intervalMode" title="Interval Mode"
+                    data-help="Select 'Endless' to practice indefinitely, or set a focused duration filter which will auto-stop the clock."
+                    style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
                     <option value="endless">Endless</option>
                     <option value="1min">Focus (1 min)</option>
                     <option value="3min">Stamina (3 min)</option>
                 </select>
-                <select id="setting-countInBars" title="Count-In" data-help="Sets the number of standard bars played before the session tracker and muting challenges actually begin." style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                <select id="setting-countInBars" title="Count-In"
+                    data-help="Sets the number of standard bars played before the session tracker and muting challenges actually begin."
+                    style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
                     <option value="0">No Count</option>
                     <option value="1">1 Bar-In</option>
                     <option value="2" selected>2 Bar-In</option>
                 </select>
-                <select id="setting-voicing" title="Voicing" data-help="Select the click tone. 'Woodblock' is warmer, 'Voice' counts out loud, and 'Standard' is an electronic beep." style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                <select id="setting-voicing" title="Voicing"
+                    data-help="Select the click tone. 'Woodblock' is warmer, 'Voice' counts out loud, and 'Standard' is an electronic beep."
+                    style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
                     <option value="beep">Beep</option>
                     <option value="woodblock">Wood</option>
                     <option value="female-voice">Female Voice</option>
                     <option value="male-voice">Male Voice</option>
                 </select>
-                <select id="setting-emphasis" title="Emphasis Grid" data-help="Filters out specific beat pulses. 'Ands' only plays the offbeats; '2 and 4' forces backbeat feel." style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                <select id="setting-emphasis" title="Emphasis Grid"
+                    data-help="Filters out specific beat pulses. 'Ands' only plays the offbeats; '2 and 4' forces backbeat feel."
+                    style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
                     <option value="on-beat">On-beat</option>
                     <option value="ands">Ands</option>
                     <option value="2and4">2 & 4</option>
@@ -76,38 +116,56 @@
             </div>
 
             <div style="display: flex; align-items: center; gap: 1rem;">
-                <button id="btn-toggle-challenges" data-help="Opens the drop-down menu for advanced Mute Bars and Shaky Click features." style="padding: 0.4rem 0.8rem; cursor: pointer; border-radius: 4px; border: 1px solid rgba(255,255,255,0.4); background: rgba(255,255,255,0.1); color: white;">More Options ▽</button>
-                <button id="btn-hardware-setup" data-help="Configure MIDI ports, map custom electronic drum triggers, and calibrate system latency." style="padding: 0.4rem 0.8rem; cursor: pointer; border-radius: 4px; background: rgba(56, 189, 248, 0.2); color: var(--color-primary-accent); border: 1px solid var(--color-primary-accent);">⚙️ Setup</button>
+                <button id="btn-toggle-challenges"
+                    data-help="Opens the drop-down menu for advanced Mute Bars and Shaky Click features."
+                    style="padding: 0.4rem 0.8rem; cursor: pointer; border-radius: 4px; border: 1px solid rgba(255,255,255,0.4); background: rgba(255,255,255,0.1); color: white;">More
+                    Options ▽</button>
+                <button id="btn-hardware-setup"
+                    data-help="Configure MIDI ports, map custom electronic drum triggers, and calibrate system latency."
+                    style="padding: 0.4rem 0.8rem; cursor: pointer; border-radius: 4px; background: rgba(56, 189, 248, 0.2); color: var(--color-primary-accent); border: 1px solid var(--color-primary-accent);">⚙️
+                    Setup</button>
             </div>
 
             <!-- Absolute Dropdown Overlay for Challenges -->
-            <div id="expanded-rhythm-settings" style="display: none; position: absolute; top: calc(100% + 10px); left: 0; right: 0; background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); padding: 1.5rem; z-index: 20; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+            <div id="expanded-rhythm-settings"
+                style="display: none; position: absolute; top: calc(100% + 10px); left: 0; right: 0; background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); padding: 1.5rem; z-index: 20; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
                 <div style="display: flex; justify-content: space-around; gap: 2rem;">
                     <!-- Subdivision Mixer -->
                     <div style="flex: 1;">
                         <h3 style="margin-top: 0; color: var(--color-primary-accent);">Subdivision Mixer</h3>
-                        <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">Enable secondary clicking layers and physically mix their volumes output levels.</p>
-                        
+                        <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">Enable secondary clicking
+                            layers and physically mix their volumes output levels.</p>
+
                         <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; margin-bottom: 0.2rem;">
-                                <label style="display: flex; align-items: center; gap: 0.5rem; width: 120px; font-weight: bold;"><input type="checkbox" id="setting-pattern-main" checked> Main Beat</label>
-                                <input type="range" id="vol-pattern-main" value="100" min="0" max="100" style="flex: 1;">
+                            <div
+                                style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; margin-bottom: 0.2rem;">
+                                <label
+                                    style="display: flex; align-items: center; gap: 0.5rem; width: 120px; font-weight: bold;"><input
+                                        type="checkbox" id="setting-pattern-main" checked> Main Beat</label>
+                                <input type="range" id="vol-pattern-main" value="100" min="0" max="100"
+                                    style="flex: 1;">
                             </div>
                             <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <label style="display: flex; align-items: center; gap: 0.5rem; width: 120px;"><input type="checkbox" id="setting-pattern-8th"> 8th Note</label>
+                                <label style="display: flex; align-items: center; gap: 0.5rem; width: 120px;"><input
+                                        type="checkbox" id="setting-pattern-8th"> 8th Note</label>
                                 <input type="range" id="vol-pattern-8th" value="50" min="0" max="100" style="flex: 1;">
                             </div>
                             <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <label style="display: flex; align-items: center; gap: 0.5rem; width: 120px;"><input type="checkbox" id="setting-pattern-8thTrip"> 8th Triplet</label>
-                                <input type="range" id="vol-pattern-8thTrip" value="50" min="0" max="100" style="flex: 1;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; width: 120px;"><input
+                                        type="checkbox" id="setting-pattern-8thTrip"> 8th Triplet</label>
+                                <input type="range" id="vol-pattern-8thTrip" value="50" min="0" max="100"
+                                    style="flex: 1;">
                             </div>
                             <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <label style="display: flex; align-items: center; gap: 0.5rem; width: 120px;"><input type="checkbox" id="setting-pattern-16th"> 16th Note</label>
+                                <label style="display: flex; align-items: center; gap: 0.5rem; width: 120px;"><input
+                                        type="checkbox" id="setting-pattern-16th"> 16th Note</label>
                                 <input type="range" id="vol-pattern-16th" value="50" min="0" max="100" style="flex: 1;">
                             </div>
                             <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <label style="display: flex; align-items: center; gap: 0.5rem; width: 120px;"><input type="checkbox" id="setting-pattern-16thTrip"> 16th Triplet</label>
-                                <input type="range" id="vol-pattern-16thTrip" value="50" min="0" max="100" style="flex: 1;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; width: 120px;"><input
+                                        type="checkbox" id="setting-pattern-16thTrip"> 16th Triplet</label>
+                                <input type="range" id="vol-pattern-16thTrip" value="50" min="0" max="100"
+                                    style="flex: 1;">
                             </div>
                         </div>
                     </div>
@@ -117,20 +175,29 @@
                     <!-- Mute Bars -->
                     <div style="flex: 1;">
                         <h3 style="margin-top: 0;">Mute Bars</h3>
-                        <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">Mutes the click completely to test your internal tempo keeping.</p>
+                        <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">Mutes the click completely to
+                            test your internal tempo keeping.</p>
                         <div style="display: flex; align-items: center; gap: 1rem; margin-top: 1rem;">
-                            <select id="setting-gapRadioMode" style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                            <select id="setting-gapRadioMode"
+                                style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
                                 <option value="off">Off</option>
                                 <option value="constant">Constant</option>
                                 <option value="random-beat">Random Beat</option>
                                 <option value="random-bar">Random Bar</option>
                             </select>
-                            <span data-help="When Mute Bars is set to 'Constant', configures the exact amount of full bars played vs muted.">
-                                <input type="number" id="setting-gapConstantOn" value="1" min="1" max="16" style="width: 50px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;"> On /
-                                <input type="number" id="setting-gapConstantOff" value="1" min="1" max="16" style="width: 50px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;"> Off
+                            <span
+                                data-help="When Mute Bars is set to 'Constant', configures the exact amount of full bars played vs muted.">
+                                <input type="number" id="setting-gapConstantOn" value="1" min="1" max="16"
+                                    style="width: 50px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;">
+                                On /
+                                <input type="number" id="setting-gapConstantOff" value="1" min="1" max="16"
+                                    style="width: 50px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;">
+                                Off
                             </span>
                         </div>
-                        <div id="setting-gapChaos-container" style="margin-top: 1rem; display: none; align-items: center; gap: 1rem;" data-help="When Mute Bars is set to 'Random', determines the percentage (%) chance any individual click will be randomly deleted.">
+                        <div id="setting-gapChaos-container"
+                            style="margin-top: 1rem; display: none; align-items: center; gap: 1rem;"
+                            data-help="When Mute Bars is set to 'Random', determines the percentage (%) chance any individual click will be randomly deleted.">
                             <label>Random Chance:</label>
                             <input type="range" id="setting-gapChaos" value="50" min="0" max="100" style="flex: 1;">
                         </div>
@@ -141,18 +208,26 @@
                     <!-- Shaky Click -->
                     <div style="flex: 1;">
                         <h3 style="margin-top: 0; color: var(--color-warning);">Shaky Click</h3>
-                        <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">Challenges you to keep a consistent time despite an inconsistent click. Your score is judged against the actual consistent grid.</p>
+                        <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">Challenges you to keep a
+                            consistent time despite an inconsistent click. Your score is judged against the actual
+                            consistent grid.</p>
                         <div style="margin-top: 1rem;">
                             <label><input type="checkbox" id="setting-shakyEnabled"> <b>Enable Simulator</b></label>
                         </div>
                         <div style="display: flex; align-items: center; gap: 1rem; margin-top: 1rem;">
-                            <span data-help="The maximum unsteadiness penalty applied to a shaky click in milliseconds.">
+                            <span
+                                data-help="The maximum unsteadiness penalty applied to a shaky click in milliseconds.">
                                 <label>Jitter Range:</label>
-                                <input type="number" id="setting-shakyRange" value="10" min="1" max="100" style="width: 60px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;"> ms
+                                <input type="number" id="setting-shakyRange" value="10" min="1" max="100"
+                                    style="width: 60px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;">
+                                ms
                             </span>
-                            <span data-help="The percentage chance the engine will actually jitter a click on any given beat.">
+                            <span
+                                data-help="The percentage chance the engine will actually jitter a click on any given beat.">
                                 <label>Jitter Chance:</label>
-                                <input type="number" id="setting-shakyChance" value="50" min="0" max="100" style="width: 50px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;"> %
+                                <input type="number" id="setting-shakyChance" value="50" min="0" max="100"
+                                    style="width: 50px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;">
+                                %
                             </span>
                         </div>
                     </div>
@@ -161,13 +236,18 @@
         </div>
 
         <!-- Main Visualization Layer -->
-        <div class="panel-lab surface" id="panel-lab" style="flex: 1; display: flex; flex-direction: row; overflow: hidden; margin-top: 1rem; border-color: rgba(255,255,255,0.1) !important; padding: 0;">
-            
+        <div class="panel-lab surface" id="panel-lab"
+            style="flex: 1; display: flex; flex-direction: row; overflow: hidden; margin-top: 1rem; border-color: rgba(255,255,255,0.1) !important; padding: 0;">
+
             <!-- Repeating Time Series Plot (Left 70%) -->
-            <div style="flex: 7; position: relative; border-right: 1px solid rgba(255,255,255,0.2); display: flex; flex-direction: column;" data-help="Multi-Track Timeline. A scrolling sequencer grid plotting your exact hits in real-time. Loops according to the window length.">
-                <div style="position: absolute; top: 10px; right: 10px; z-index: 5; display: flex; gap: 0.5rem; align-items: center; background: rgba(0,0,0,0.5); padding: 0.3rem 0.6rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">
-                    <label style="color: var(--color-primary-accent); font-size: 0.8rem; text-transform: uppercase;">Grid:</label>
-                    <select id="setting-timeline-grid" style="background: transparent; color: white; border: none; font-size: 0.85rem; font-weight: bold; cursor: pointer; outline: none; margin-right: 0.5rem;">
+            <div style="flex: 7; position: relative; border-right: 1px solid rgba(255,255,255,0.2); display: flex; flex-direction: column;"
+                data-help="Multi-Track Timeline. A scrolling sequencer grid plotting your exact hits in real-time. Loops according to the window length.">
+                <div
+                    style="position: absolute; top: 10px; right: 10px; z-index: 5; display: flex; gap: 0.5rem; align-items: center; background: rgba(0,0,0,0.5); padding: 0.3rem 0.6rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">
+                    <label
+                        style="color: var(--color-primary-accent); font-size: 0.8rem; text-transform: uppercase;">Grid:</label>
+                    <select id="setting-timeline-grid"
+                        style="background: transparent; color: white; border: none; font-size: 0.85rem; font-weight: bold; cursor: pointer; outline: none; margin-right: 0.5rem;">
                         <option value="1">Quarter</option>
                         <option value="2">8ths</option>
                         <option value="4" selected>16ths</option>
@@ -175,8 +255,10 @@
                         <option value="6">16th Triplets</option>
                     </select>
 
-                    <label style="color: var(--color-primary-accent); font-size: 0.8rem; text-transform: uppercase;">Window:</label>
-                    <select id="setting-timeline-window" style="background: transparent; color: white; border: none; font-size: 0.85rem; font-weight: bold; cursor: pointer; outline: none;">
+                    <label
+                        style="color: var(--color-primary-accent); font-size: 0.8rem; text-transform: uppercase;">Window:</label>
+                    <select id="setting-timeline-window"
+                        style="background: transparent; color: white; border: none; font-size: 0.85rem; font-weight: bold; cursor: pointer; outline: none;">
                         <option value="1">1 Bar</option>
                         <option value="2" selected>2 Bars</option>
                         <option value="4">4 Bars</option>
@@ -184,85 +266,124 @@
                 </div>
                 <!-- Adding pointer-events: none so it doesn't block hover events of the overarching div, though maybe fine without. Will just place canvas absolutely over it if it needs strict scaling. Actually, flex: 1 is fine since we use ResizeObserver in the JS classes usually. -->
                 <div style="flex: 1; position: relative; width: 100%; height: 100%;">
-                    <canvas id="timeline-canvas" style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
+                    <canvas id="timeline-canvas"
+                        style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
                 </div>
             </div>
 
             <!-- Legacy Analytics Column (Right 30%) -->
             <div style="flex: 3; display: flex; flex-direction: column; overflow: hidden;">
                 <!-- Scatter Plot (Top 40%) -->
-                <div style="flex: 4; position: relative; border-bottom: 1px solid rgba(255,255,255,0.2);" data-help="Open Ended Scatter Plot. X-Axis: Timing Error. Y-Axis: Velocity. Inverse decaying notes fade based on your Advanced tuning.">
-                    <canvas id="lab-canvas" style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
+                <div style="flex: 4; position: relative; border-bottom: 1px solid rgba(255,255,255,0.2);"
+                    data-help="Open Ended Scatter Plot. X-Axis: Timing Error. Y-Axis: Velocity. Inverse decaying notes fade based on your Advanced tuning.">
+                    <canvas id="lab-canvas"
+                        style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
                 </div>
-                
+
                 <!-- Histogram Bell Curve (Middle 20%) -->
-                <div style="flex: 2; position: relative; border-bottom: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3);" data-help="Pocket Heatmap (Session Histogram). A cumulative volume bell-curve collecting every strike across your active session.">
-                    <canvas id="histogram-canvas" style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
+                <div style="flex: 2; position: relative; border-bottom: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3);"
+                    data-help="Pocket Heatmap (Session Histogram). A cumulative volume bell-curve collecting every strike across your active session.">
+                    <canvas id="histogram-canvas"
+                        style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
                 </div>
 
                 <!-- Limb Offset Matrix (Bottom 40%) -->
-                <div style="flex: 4; position: relative; background: rgba(0,0,0,0.1);" data-help="Limb Offset Matrix (The 'Smear' Detector). Evaluates Hi-Hat against Kick/Snare sync within a \u00B132nd note window. 2D Scatter plotted synchronously.">
-                    <canvas id="matrix-canvas" style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
+                <div style="flex: 4; position: relative; background: rgba(0,0,0,0.1);"
+                    data-help="Limb Offset Matrix (The 'Smear' Detector). Evaluates Hi-Hat against Kick/Snare sync within a \u00B132nd note window. 2D Scatter plotted synchronously.">
+                    <canvas id="matrix-canvas"
+                        style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
                 </div>
             </div>
         </div>
 
         <!-- Floating Help Overlay -->
-        <div id="help-wrapper" style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; display: flex; flex-direction: column; align-items: flex-end;">
-            <button id="btn-toggle-help" style="margin-right: 2rem; padding: 0.5rem 1rem; background: rgba(15, 23, 42, 0.95); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); border-bottom: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.9rem; transition: all 0.2s;">Hide Help ▽</button>
-            <div id="help-footer" style="width: 100%; background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(10px); padding: 0.8rem; text-align: center; color: #a3e635; font-style: italic; font-size: 0.95rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; min-height: 2.5rem;">
+        <div id="help-wrapper"
+            style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; display: flex; flex-direction: column; align-items: flex-end;">
+            <button id="btn-toggle-help"
+                style="margin-right: 2rem; padding: 0.5rem 1rem; background: rgba(15, 23, 42, 0.95); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); border-bottom: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.9rem; transition: all 0.2s;">Hide
+                Help ▽</button>
+            <div id="help-footer"
+                style="width: 100%; background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(10px); padding: 0.8rem; text-align: center; color: #a3e635; font-style: italic; font-size: 0.95rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; min-height: 2.5rem;">
                 <span id="help-content">Hover over any control or system graph to view its documentation here.</span>
             </div>
         </div>
     </div>
 
     <!-- Hardware Setup Modal -->
-    <dialog id="modal-hardware" style="background: var(--color-surface); color: white; padding: 2rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; max-width: 800px; width: 90%; margin: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem;">
+    <dialog id="modal-hardware"
+        style="background: var(--color-surface); color: white; padding: 2rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; max-width: 800px; width: 90%; margin: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem;">
             <h2 style="margin: 0;">Device Setup & Calibration</h2>
-            <button id="btn-close-modal" style="cursor: pointer; background: transparent; color: white; border: none; font-size: 1.5rem;">&times;</button>
+            <button id="btn-close-modal"
+                style="cursor: pointer; background: transparent; color: white; border: none; font-size: 1.5rem;">&times;</button>
         </div>
 
         <!-- Tab Controls -->
-        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
-            <button id="tab-btn-setup" style="background: none; border: none; color: white; font-size: 1.1rem; cursor: pointer; border-bottom: 2px solid var(--color-primary-accent); padding-bottom: 0.5rem; font-weight: bold;">Mapping & Calibration</button>
-            <button id="tab-btn-troubleshoot" style="background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.1rem; cursor: pointer; padding-bottom: 0.5rem;">Troubleshoot</button>
-            <button id="tab-btn-advanced" style="background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.1rem; cursor: pointer; padding-bottom: 0.5rem;">Advanced Config</button>
+        <div
+            style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
+            <button id="tab-btn-setup"
+                style="background: none; border: none; color: white; font-size: 1.1rem; cursor: pointer; border-bottom: 2px solid var(--color-primary-accent); padding-bottom: 0.5rem; font-weight: bold;">Mapping
+                & Calibration</button>
+            <button id="tab-btn-advanced"
+                style="background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.1rem; cursor: pointer; padding-bottom: 0.5rem;">Advanced
+                Config</button>
+            <button id="tab-btn-troubleshoot"
+                style="background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.1rem; cursor: pointer; padding-bottom: 0.5rem;">Troubleshoot</button>
         </div>
-        
+
         <!-- Setup View Focus -->
         <div id="view-setup">
             <div style="margin-bottom: 2rem;">
                 <h3 data-help="Current status of the browser's Web MIDI API connection.">MIDI Connection</h3>
-                <div id="midi-status" style="color: var(--color-warning);">Waiting for browser Web MIDI permission...</div>
+                <div id="midi-status" style="color: var(--color-warning);">Waiting for browser Web MIDI permission...
+                </div>
             </div>
 
-            <div style="margin-bottom: 2rem;" data-help="Velocity threshold (0-127). Any physical pad strike that registers a velocity softer than this numeric value will be ignored. Useful for preventing vibrations or false-triggers from displaying.">
+            <div style="margin-bottom: 2rem;"
+                data-help="Velocity threshold (0-127). Any physical pad strike that registers a velocity softer than this numeric value will be ignored. Useful for preventing vibrations or false-triggers from displaying.">
                 <h3>Ghost Note Filter</h3>
+                <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic; margin-top: 0.5rem;">
+                    Strikes below this velocity are ignored. Use this to filter out unintended vibrations or
+                    double-triggers. Click Calibrate and play your ghost notes to tune this automatically.
                 <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem;">
-                    <input type="number" id="hw-ghost-threshold" min="0" max="127" value="32" style="width: 80px; padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
-                    <button id="btn-calibrate-ghost" data-help="Click this and strike your pads as softly as possible. The engine records your loudest 'ghost note'. Click 'Finish' to automatically set the filter exactly 1 step above it." style="padding: 0.3rem 1rem; cursor: pointer; background: var(--color-primary-accent); border: none; border-radius: 4px; font-weight: bold; color: black;">Calibrate</button>
+                    <input type="number" id="hw-ghost-threshold" min="0" max="127" value="32"
+                        style="width: 80px; padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                    <button id="btn-calibrate-ghost"
+                        data-help="Click this and strike your pads as softly as possible. The engine records your loudest 'ghost note'. Click 'Finish' to automatically set the filter exactly 1 step above it."
+                        style="padding: 0.3rem 1rem; cursor: pointer; background: var(--color-primary-accent); border: none; border-radius: 4px; font-weight: bold; color: black;">Calibrate</button>
                     <div id="ghost-status" style="font-size: 0.9rem; color: #94a3b8; margin-left: 0.5rem;"></div>
                 </div>
+                </p>
             </div>
 
             <div style="margin-bottom: 2rem;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-end;">
                     <div>
-                        <h3>Input Mapping Table</h3>
-                        <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic; margin-bottom: 0;">Provide multiple Note IDs separated by a comma (e.g. "34, 36, 38"). Click 'Listen' and strike your pads in different ways to capture all available zones for that instrument, then click 'Stop'.</p>
+                        <h3>MIDI Note Mapping</h3>
+                        <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic; margin-bottom: 0;">Provide
+                            multiple Note IDs separated by a comma (e.g. "34, 36, 38"). Click 'Listen' and strike your
+                            pads in different ways to capture all available zones for that instrument, then click
+                            'Stop'.</p>
                     </div>
                     <div>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--color-warning); font-weight: bold; font-size: 0.9rem;" data-help="When enabled, any strikes configured as a 'Ride' will automatically be drawn and evaluated exactly as if they were the Hi-Hat."><input type="checkbox" id="setting-merge-ride"> Merge Ride to Hi-Hat</label>
+                        <label
+                            style="display: flex; align-items: center; gap: 0.5rem; color: var(--color-warning); font-weight: bold; font-size: 0.9rem;"
+                            data-help="When enabled, any strikes configured as a 'Ride' will automatically be drawn and evaluated exactly as if they were the Hi-Hat."><input
+                                type="checkbox" id="setting-merge-ride"> Merge Ride to Hi-Hat</label>
                     </div>
                 </div>
                 <table style="width: 100%; text-align: left; border-collapse: collapse;">
                     <thead>
                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
-                            <th data-help="The drum component you are configuring." style="padding: 0.5rem; width: 20%;">Instrument</th>
-                            <th data-help="The internal numerical identity of the MIDI note sent by the drum brain." style="padding: 0.5rem; width: 35%;">Note IDs</th>
-                            <th data-help="Click 'Listen' to start recording. Strike your pads multiple times to capture all zones. Click 'Stop' when finished." style="padding: 0.5rem; width: 25%;">Live Map</th>
-                            <th data-help="Visual configuration for how this pad displays in the visualizations." style="padding: 0.5rem; width: 20%;">Visuals</th>
+                            <th data-help="The drum component you are configuring."
+                                style="padding: 0.5rem; width: 20%;">Instrument</th>
+                            <th data-help="The internal numerical identity of the MIDI note sent by the drum brain."
+                                style="padding: 0.5rem; width: 35%;">MIDI Notes</th>
+                            <th data-help="Click 'Listen' to start recording. Strike your pads multiple times to capture all zones. Click 'Stop' when finished."
+                                style="padding: 0.5rem; width: 25%;">Live Map</th>
+                            <th data-help="Visual configuration for how this pad displays in the visualizations."
+                                style="padding: 0.5rem; width: 20%;">Visuals</th>
                         </tr>
                     </thead>
                     <tbody id="mapping-tbody">
@@ -273,50 +394,42 @@
 
             <div style="margin-bottom: 2rem;">
                 <h3>System Calibration (Latency Sync)</h3>
-                <p style="font-size: 0.9rem; color: #94a3b8; font-style: italic;">Strike any mapped pad exactly simultaneously with the pulse to calculate your system latency offset.</p>
+                <p style="font-size: 0.9rem; color: #94a3b8; font-style: italic;">Strike any mapped pad exactly
+                    simultaneously with the pulse to calculate your system latency offset.</p>
                 <div style="display: flex; align-items: center; gap: 1rem; margin-top: 1rem;">
-                    <button id="btn-start-calibration" data-help="Striking repeatedly along with the click track allows the engine to calculate and subtract out latency caused by your specific hardware." style="padding: 0.5rem 1rem; cursor: pointer; background: var(--color-primary-accent); border: none; border-radius: 4px; font-weight: bold; color: black;">Start Calibration (8 Hits)</button>
+                    <button id="btn-start-calibration"
+                        data-help="Striking repeatedly along with the click track allows the engine to calculate and subtract out latency caused by your specific hardware."
+                        style="padding: 0.5rem 1rem; cursor: pointer; background: var(--color-primary-accent); border: none; border-radius: 4px; font-weight: bold; color: black;">Start
+                        Calibration (8 Hits)</button>
                     <div id="calibration-status" style="font-variant-numeric: tabular-nums;">Ready. L_sys: 0ms</div>
                 </div>
             </div>
 
             <!-- Modal Help System Relocated To Bottom -->
-            <details id="modal-help-section" style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
-                <summary style="cursor: pointer; font-weight: bold; color: var(--color-primary-accent);">Interactive Help</summary>
-                <div id="modal-help-content" style="margin-top: 0.5rem; color: #94a3b8; font-size: 0.9rem; line-height: 1.4; min-height: 3rem;">
+            <details id="modal-help-section"
+                style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                <summary style="cursor: pointer; font-weight: bold; color: var(--color-primary-accent);">Interactive
+                    Help</summary>
+                <div id="modal-help-content"
+                    style="margin-top: 0.5rem; color: #94a3b8; font-size: 0.9rem; line-height: 1.4; min-height: 3rem;">
                     Hover over any control or graph to see its description and goal here.
                 </div>
             </details>
         </div>
 
-        <!-- Troubleshoot View Focus -->
-        <div id="view-troubleshoot" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <div>
-                    <label style="margin-right: 0.5rem;">Log Level Filter:</label>
-                    <select id="log-level-filter" data-help="Determine how verbose the hardware logger is. Level 1 filters out continuous controller pedaling spam." style="background: rgba(0,0,0,0.3); color: white; padding: 0.3rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
-                        <option value="1">1 - Note On</option>
-                        <option value="2">2 - All Standard MIDI Events</option>
-                        <option value="3">3 - Everything (Raw)</option>
-                    </select>
-                </div>
-                <button id="btn-clear-log" data-help="Erases the current console readout." style="padding: 0.3rem 0.6rem; cursor: pointer; background: rgba(239, 68, 68, 0.2); border: 1px solid var(--color-critical); color: var(--color-critical); border-radius: 4px;">Clear Console</button>
-            </div>
-            
-            <!-- Limit to 5000 messages via JS logic inside app -->
-            <div id="hw-console" style="background: black; padding: 1rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); height: 400px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; color: #a3e635; display: flex; flex-direction: column-reverse; white-space: pre-wrap;">
-                <div>[System] Troubleshooter console initialized. Waiting for events...</div>
-            </div>
-        </div>
-        
         <!-- Advanced View Focus -->
         <div id="view-advanced" style="display: none;">
             <div style="margin-bottom: 2rem;">
-                <label style="display: block; font-weight: bold; margin-bottom: 0.5rem; color: var(--color-primary-accent); font-size: 1.1rem;">Audio Feedback Engine</label>
-                <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px;">
+                <label
+                    style="display: block; font-weight: bold; margin-bottom: 0.5rem; color: var(--color-primary-accent); font-size: 1.1rem;">Audible
+                    Feedback</label>
+                <div
+                    style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px;">
                     <div style="display: flex; align-items: center; justify-content: space-between;">
-                        <span data-help="Selects which drums and beats trigger audio feedback evaluators.">Trigger Mode:</span>
-                        <select id="setting-feedbackTrigger" style="background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 0.3rem;">
+                        <span data-help="Selects which drums and beats trigger audio feedback evaluators.">Trigger
+                            Mode:</span>
+                        <select id="setting-feedbackTrigger"
+                            style="background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 0.3rem;">
                             <option value="snare" selected>Snare on downbeats</option>
                             <option value="kick">Kick on downbeats</option>
                             <option value="snare-kick">Snare and kick alternating</option>
@@ -324,8 +437,11 @@
                     </div>
 
                     <div style="display: flex; align-items: center; justify-content: space-between;">
-                        <span data-help="Determines the target accuracy window required to trigger a 'Good' evaluation (within +/- 32nd note space).">Difficulty (Good Window):</span>
-                        <select id="setting-feedbackDifficulty" style="background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 0.3rem;">
+                        <span
+                            data-help="Determines the target accuracy window required to trigger a 'Good' evaluation (within +/- 32nd note space).">Difficulty
+                            (Good Window):</span>
+                        <select id="setting-feedbackDifficulty"
+                            style="background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 0.3rem;">
                             <option value="easy">Easy (80%)</option>
                             <option value="medium" selected>Medium (50%)</option>
                             <option value="hard">Hard (20%)</option>
@@ -334,25 +450,59 @@
                 </div>
             </div>
 
-            <div style="margin-bottom: 2rem;" data-help="Adjusts how long hits survive on the scatter plot before dissolving. Uses high-performance real-time logarithmic decay instead of structural CSS transitions for 60FPS fluid renders.">
-                <label style="display: block; font-weight: bold; margin-bottom: 0.5rem; color: var(--color-primary-accent); font-size: 1.1rem;">Scatter Plot Deterioration Speed</label>
+            <div style="margin-bottom: 2rem;"
+                data-help="Adjusts how long hits survive on the scatter plot before dissolving. Uses high-performance real-time logarithmic decay instead of structural CSS transitions for 60FPS fluid renders.">
+                <label
+                    style="display: block; font-weight: bold; margin-bottom: 0.5rem; color: var(--color-primary-accent); font-size: 1.1rem;">Scatter
+                    Plot Deterioration Speed</label>
                 <div style="display: flex; align-items: center; gap: 1rem; margin-top: 1rem;">
-                    <input type="range" id="setting-fadeSeconds" value="3.0" min="0.5" max="10.0" step="0.5" style="flex: 1;">
-                    <span id="display-fadeSeconds" style="font-family: monospace; font-size: 1.1rem; min-width: 40px; text-align: right;">3.0s</span>
+                    <input type="range" id="setting-fadeSeconds" value="3.0" min="0.5" max="10.0" step="0.5"
+                        style="flex: 1;">
+                    <span id="display-fadeSeconds"
+                        style="font-family: monospace; font-size: 1.1rem; min-width: 40px; text-align: right;">3.0s</span>
                 </div>
             </div>
         </div>
+
+        <!-- Troubleshoot View Focus -->
+        <div id="view-troubleshoot" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div>
+                    <label style="margin-right: 0.5rem;">Log Level Filter:</label>
+                    <select id="log-level-filter"
+                        data-help="Determine how verbose the hardware logger is. Level 1 filters out continuous controller pedaling spam."
+                        style="background: rgba(0,0,0,0.3); color: white; padding: 0.3rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                        <option value="1">1 - Note On</option>
+                        <option value="2">2 - All Standard MIDI Events</option>
+                        <option value="3">3 - Everything (Raw)</option>
+                    </select>
+                </div>
+                <button id="btn-clear-log" data-help="Erases the current console readout."
+                    style="padding: 0.3rem 0.6rem; cursor: pointer; background: rgba(239, 68, 68, 0.2); border: 1px solid var(--color-critical); color: var(--color-critical); border-radius: 4px;">Clear
+                    Console</button>
+            </div>
+
+            <!-- Limit to 5000 messages via JS logic inside app -->
+            <div id="hw-console"
+                style="background: black; padding: 1rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); height: 400px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; color: #a3e635; display: flex; flex-direction: column-reverse; white-space: pre-wrap;">
+                <div>[System] Troubleshooter console initialized. Waiting for events...</div>
+            </div>
+        </div>
     </dialog>
-    
+
     <!-- Session Result Modal -->
-    <dialog id="modal-session-result" style="background: var(--color-surface); color: white; padding: 2rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; max-width: 400px; width: 90%; margin: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); text-align: center;">
+    <dialog id="modal-session-result"
+        style="background: var(--color-surface); color: white; padding: 2rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; max-width: 400px; width: 90%; margin: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); text-align: center;">
         <h2 style="margin-top: 0; color: var(--color-primary-accent);">Practice Complete!</h2>
-        <div style="font-size: 4rem; font-weight: bold; margin: 1rem 0; font-variant-numeric: tabular-nums;" id="result-score">--%</div>
+        <div style="font-size: 4rem; font-weight: bold; margin: 1rem 0; font-variant-numeric: tabular-nums;"
+            id="result-score">--%</div>
         <p style="color: #94a3b8; margin-bottom: 2rem;" id="result-desc">Your session has been saved to the log.</p>
-        
+
         <div style="display: flex; gap: 1rem; justify-content: center;">
-            <button id="btn-result-delete" style="cursor: pointer; background: transparent; color: var(--color-critical); border: 1px solid var(--color-critical); padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold;">Discard</button>
-            <button id="btn-result-close" style="cursor: pointer; background: var(--color-primary-accent); color: black; border: none; padding: 0.5rem 2rem; border-radius: 4px; font-weight: bold;">Close</button>
+            <button id="btn-result-delete"
+                style="cursor: pointer; background: transparent; color: var(--color-critical); border: 1px solid var(--color-critical); padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold;">Discard</button>
+            <button id="btn-result-close"
+                style="cursor: pointer; background: var(--color-primary-accent); color: black; border: none; padding: 0.5rem 2rem; border-radius: 4px; font-weight: bold;">Close</button>
         </div>
     </dialog>
 
@@ -368,4 +518,5 @@
     <!-- App entry piece -->
     <script type="module" src="js/app.js?v=2"></script>
 </body>
+
 </html>

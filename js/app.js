@@ -895,15 +895,15 @@ class PocketLabApp {
 
             tr.innerHTML = `
                 <td style="padding: 0.5rem; text-transform: capitalize;">${config.name} ${isMergedRide ? '(Merged)' : ''}</td>
-                <td style="padding: 0.5rem;">
+                <td style="padding: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
                     <input type="text" id="map-note-${id}" data-help="Comma separated numeric Note IDs for this drum zone (e.g. 38, 40)" value="${noteIdsStr}" style="width: 100%; max-width: 120px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;" placeholder="38, 40">
-                </td>
-                <td style="padding: 0.5rem; display: flex; gap: 0.5rem;">
-                    <button class="live-map-btn" data-id="${id}" data-help="Click 'Listen' to capture MIDI notes. Strike your pads in different ways to register multiple zones. Click 'Stop' when done." style="cursor:pointer; padding: 0.2rem 0.5rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
-                        ${this.midi.liveMapTarget === id ? 'Stop' : 'Listen'}
-                    </button>
                     <button class="clear-map-btn" data-id="${id}" data-help="Clear all registered Note IDs for this instrument." style="cursor:pointer; padding: 0.2rem; border-radius: 4px; background: rgba(239, 68, 68, 0.2); color: var(--color-critical); border: 1px solid var(--color-critical);" title="Clear Notes">
                         🗑️
+                    </button>
+                </td>
+                <td style="padding: 0.5rem;">
+                    <button class="live-map-btn" data-id="${id}" data-help="Click 'Listen' to capture MIDI notes. Strike your pads in different ways to register multiple zones. Click 'Stop' when done." style="cursor:pointer; padding: 0.2rem 0.5rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
+                        ${this.midi.liveMapTarget === id ? 'Stop' : 'Listen'}
                     </button>
                 </td>
                 <td style="padding: 0.5rem;">
