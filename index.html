@@ -311,6 +311,29 @@
         
         <!-- Advanced View Focus -->
         <div id="view-advanced" style="display: none;">
+            <div style="margin-bottom: 2rem;">
+                <label style="display: block; font-weight: bold; margin-bottom: 0.5rem; color: var(--color-primary-accent); font-size: 1.1rem;">Audio Feedback Engine</label>
+                <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span data-help="Selects which drums and beats trigger audio feedback evaluators.">Trigger Mode:</span>
+                        <select id="setting-feedbackTrigger" style="background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 0.3rem;">
+                            <option value="snare" selected>Snare on downbeats</option>
+                            <option value="kick">Kick on downbeats</option>
+                            <option value="snare-kick">Snare and kick alternating</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span data-help="Determines the target accuracy window required to trigger a 'Good' evaluation (within +/- 32nd note space).">Difficulty (Good Window):</span>
+                        <select id="setting-feedbackDifficulty" style="background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 0.3rem;">
+                            <option value="easy">Easy (80%)</option>
+                            <option value="medium" selected>Medium (50%)</option>
+                            <option value="hard">Hard (20%)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <div style="margin-bottom: 2rem;" data-help="Adjusts how long hits survive on the scatter plot before dissolving. Uses high-performance real-time logarithmic decay instead of structural CSS transitions for 60FPS fluid renders.">
                 <label style="display: block; font-weight: bold; margin-bottom: 0.5rem; color: var(--color-primary-accent); font-size: 1.1rem;">Scatter Plot Deterioration Speed</label>
                 <div style="display: flex; align-items: center; gap: 1rem; margin-top: 1rem;">

@@ -46,6 +46,9 @@ export class Metronome {
         // Buffers
         this.voiceBuffers = {}; 
         this.voiceLoaded = false;
+        
+        this.feedbackBuffers = {};
+        this.feedbackLoaded = false;
 
         // State trackers
         this.currentTick = 0; // Out of (tsCount * 12)
@@ -83,6 +86,32 @@ export class Metronome {
         }
     }
 
+    async loadFeedbackSamples() {
+        if (this.feedbackLoaded || !this.audioContext) return;
+        this.feedbackLoaded = true;
+        const files = ['good', 'great', 'perfect', 'toofast', 'tooslow'];
+        for (const f of files) {
+            try {
+                const response = await fetch(`assets/sounds/feedback/${f}.wav`);
+                const arrayBuffer = await response.arrayBuffer();
+                this.feedbackBuffers[f] = await this.audioContext.decodeAudioData(arrayBuffer);
+            } catch (e) {
+                console.warn(`Could not load feedback sample ${f}.wav`, e);
+            }
+        }
+    }
+
+    playFeedback(type, volume = 1.0) {
+        if (!this.feedbackBuffers[type] || volume <= 0.0) return;
+        const source = this.audioContext.createBufferSource();
+        const envelope = this.audioContext.createGain();
+        source.buffer = this.feedbackBuffers[type];
+        source.connect(envelope);
+        envelope.connect(this.masterGainNode);
+        envelope.gain.value = volume;
+        source.start(0);
+    }
+
     updateSettings(settings) {
         Object.assign(this, settings);
     }
@@ -95,6 +124,7 @@ export class Metronome {
             if (!this.audioContext) {
                 this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 this.loadVoiceSamples();
+                this.loadFeedbackSamples();
             }
             if (this.audioContext.state === 'suspended') {
                 this.audioContext.resume();
@@ -281,7 +311,7 @@ export class Metronome {
             // Alert engine mapping logic (Wait, only alert UI on explicit main hits for tracking graph metrics?)
             // We pass it to the UI callback to render the ExpectedHits array
             if (this.onNoteScheduled && (playMainBeat || isCountInPhase)) {
-                this.onNoteScheduled({ time: scheduledTime, isDownbeat });
+                this.onNoteScheduled({ time: scheduledTime, isDownbeat, beatIndex });
             }
         }
     }

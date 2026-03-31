@@ -19,6 +19,10 @@ class PocketLabApp {
         this.timeline = null;
         this.limbMatrix = null;
         this.expectedHits = []; // Queue of structural times the user *should* hit
+        this.consecutiveGoodFeedbackHits = 0;
+        this.lastEvaluatedFeedbackTarget = -1;
+        this.feedbackTriggerMode = 'snare';
+        this.feedbackDifficultyMode = 'medium';
         this.init();
     }
 
@@ -133,6 +137,19 @@ class PocketLabApp {
         
         bindSetting('setting-ts-count', 'tsCount', true);
         bindSetting('setting-ts-subdiv', 'tsSubdiv', true);
+        
+        ['setting-feedbackTrigger', 'setting-feedbackDifficulty'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('change', (e) => {
+                    const prop = id === 'setting-feedbackTrigger' ? 'feedbackTriggerMode' : 'feedbackDifficultyMode';
+                    this[prop] = e.target.value;
+                    this.consecutiveGoodFeedbackHits = 0;
+                });
+                const prop = id === 'setting-feedbackTrigger' ? 'feedbackTriggerMode' : 'feedbackDifficultyMode';
+                this[prop] = el.value;
+            }
+        });
         
         // Listen to timeline config changes
         const winSel = document.getElementById('setting-timeline-window');
@@ -517,10 +534,10 @@ class PocketLabApp {
             
             const now = performance.now();
             let closestHit = this.expectedHits[0];
-            let minDiff = Math.abs(now - expectedHitPerfTime(closestHit));
+            let minDiff = Math.abs(now - expectedHitPerfTime(closestHit.time));
             
             for(let i = 1; i < this.expectedHits.length; i++) {
-                const diff = Math.abs(now - expectedHitPerfTime(this.expectedHits[i]));
+                const diff = Math.abs(now - expectedHitPerfTime(this.expectedHits[i].time));
                 if (diff < minDiff) {
                     minDiff = diff;
                     closestHit = this.expectedHits[i];
@@ -529,18 +546,69 @@ class PocketLabApp {
             
             
             // Expected time physically arriving from drum
-            const expectedPerf = expectedHitPerfTime(closestHit);
+            const expectedPerf = expectedHitPerfTime(closestHit.time);
             const offsetMs = now - expectedPerf;
 
             if (this.limbMatrix && this.metronome.isPlaying && this.metronome.sessionStartTime) {
                 this.limbMatrix.addHit(
                     hitDetails.instrument,
                     offsetMs,
-                    closestHit,
+                    closestHit.time,
                     hitDetails.velocity,
                     hitDetails.config.color,
                     hitDetails.config.shape
                 );
+            }
+
+            // Audio Feedback Engine Logic
+            let isEvaluatingFeedback = false;
+            
+            if (this.feedbackTriggerMode === 'snare') {
+                if (hitDetails.instrument === 'snare') isEvaluatingFeedback = true;
+            } else if (this.feedbackTriggerMode === 'kick') {
+                if (hitDetails.instrument === 'kick') isEvaluatingFeedback = true;
+            } else if (this.feedbackTriggerMode === 'snare-kick') {
+                if (hitDetails.instrument === 'kick' && (closestHit.beatIndex === 0 || closestHit.beatIndex === 2)) isEvaluatingFeedback = true;
+                if (hitDetails.instrument === 'snare' && (closestHit.beatIndex === 1 || closestHit.beatIndex === 3)) isEvaluatingFeedback = true;
+            }
+
+            if (isEvaluatingFeedback) {
+                // Prevent evaluating double hits on the same target
+                if (closestHit.time !== this.lastEvaluatedFeedbackTarget) {
+                    this.lastEvaluatedFeedbackTarget = closestHit.time;
+                    
+                    const offsetSecs = offsetMs / 1000.0;
+                    const thirtySecondSecs = (60.0 / this.metronome.bpm) / 8.0;
+                    
+                    let diffFactor = 0.5;
+                    if (this.feedbackDifficultyMode === 'easy') diffFactor = 0.8;
+                    else if (this.feedbackDifficultyMode === 'hard') diffFactor = 0.2;
+                    
+                    if (Math.abs(offsetSecs) <= thirtySecondSecs) {
+                        const absOffset = Math.abs(offsetSecs);
+                        if (absOffset <= thirtySecondSecs * diffFactor) {
+                            this.consecutiveGoodFeedbackHits++;
+                            
+                            if (this.consecutiveGoodFeedbackHits <= 2) {
+                                this.metronome.playFeedback('good');
+                            } else if (this.consecutiveGoodFeedbackHits === 3) {
+                                this.metronome.playFeedback('great');
+                            } else if (this.consecutiveGoodFeedbackHits >= 4) {
+                                this.metronome.playFeedback('perfect');
+                            }
+                        } else {
+                            this.consecutiveGoodFeedbackHits = 0;
+                            if (offsetSecs < 0) {
+                                this.metronome.playFeedback('toofast');
+                            } else {
+                                this.metronome.playFeedback('tooslow');
+                            }
+                        }
+                    } else {
+                        // Missed window entirely, break streak silently
+                        this.consecutiveGoodFeedbackHits = 0;
+                    }
+                }
             }
             
             // Only plot if it's within a very wide logical threshold (e.g. they aren't just jamming randomly while click is running)
@@ -696,19 +764,19 @@ class PocketLabApp {
              // Since gap radio mutes audio, but the structure exists. We'll track the scheduleObj.time.
              
              // Queue management
-             this.expectedHits.push(scheduleObj.time);
+             this.expectedHits.push({ time: scheduleObj.time, beatIndex: scheduleObj.beatIndex });
              
              // If debug is on, money beat uses 8th notes, so we must track 8th note targets to grade against
              if (this.isDebug) {
                  const beatLengthSecs = 60.0 / this.metronome.bpm;
-                 this.expectedHits.push(scheduleObj.time + (beatLengthSecs / 2.0));
+                 this.expectedHits.push({ time: scheduleObj.time + (beatLengthSecs / 2.0), beatIndex: -1 });
                  // Also sort expectedHits just in case
-                 this.expectedHits.sort((a,b) => a - b);
+                 this.expectedHits.sort((a,b) => a.time - b.time);
              }
              
              // Clear out old expectations to prevent memory leak
              const nowAudio = this.metronome.audioContext.currentTime;
-             this.expectedHits = this.expectedHits.filter(t => t > nowAudio - 2.0); // keep 2 seconds of history
+             this.expectedHits = this.expectedHits.filter(hit => hit.time > nowAudio - 2.0); // keep 2 seconds of history
         };
     }
 
