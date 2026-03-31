@@ -307,12 +307,11 @@ export class Metronome {
             if (!isCountInPhase && subVoiceVol > 0.0) {
                 this.playSubdivisionVoice(scheduledTime, subVoiceVol);
             }
+        }
 
-            // Alert engine mapping logic (Wait, only alert UI on explicit main hits for tracking graph metrics?)
-            // We pass it to the UI callback to render the ExpectedHits array
-            if (this.onNoteScheduled && (playMainBeat || isCountInPhase)) {
-                this.onNoteScheduled({ time: scheduledTime, isDownbeat, beatIndex });
-            }
+        // Always alert engine mapping logic even if muted (Gap Radio), and include subdivisions
+        if (this.onNoteScheduled && (playMainBeat || isCountInPhase || (!isCountInPhase && subVoiceVol > 0.0))) {
+            this.onNoteScheduled({ time: scheduledTime, isDownbeat, beatIndex });
         }
     }
 

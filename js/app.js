@@ -24,8 +24,7 @@ class PocketLabApp {
         this.lastEvaluatedFeedbackTarget = -1;
         this.feedbackTriggerMode = 'snare';
         this.feedbackDifficultyMode = 'medium';
-        this.sessionHitCount = 0;
-        this.sessionScoreSum = 0;
+        this.sessionHitHistory = []; // Local history of scores for sliding average calculation
         this.scoreDisplay = document.getElementById('score-display');
         this.init();
     }
@@ -74,9 +73,9 @@ class PocketLabApp {
                 playBtn.textContent = this.metronome.isPlaying ? 'Stop' : 'Start';
                 
                 if (this.metronome.isPlaying) {
-                    this.sessionHitCount = 0;
-                    this.sessionScoreSum = 0;
-                    if (this.scoreDisplay) this.scoreDisplay.textContent = '--% AVG';
+                    this.sessionHitHistory = [];
+                    if (this.scoreDisplay) this.scoreDisplay.textContent = '--% AVG (8 BARS)';
+                    this.visualizer.isPlaying = this.metronome.isPlaying;
                 }
                 
                 if (this.visualizer) {
@@ -811,11 +810,20 @@ class PocketLabApp {
             if (Math.abs(offsetMs) < 400) {
                 
                 if (this.metronome.isPlaying && !this.metronome.isCountInPhase) {
-                    this.sessionHitCount++;
-                    this.sessionScoreSum += timingScore;
-                    if (this.scoreDisplay) {
-                        const avg = Math.round(this.sessionScoreSum / this.sessionHitCount);
-                        this.scoreDisplay.textContent = `${avg}% AVG`;
+                    this.sessionHitHistory.push({
+                        score: timingScore,
+                        bar: this.metronome.currentBarTotal
+                    });
+
+                    // Purge anything older than 8 bars from the window
+                    const currentBar = this.metronome.currentBarTotal;
+                    const minBarAllowed = currentBar - 7; // Current bar + 7 previous
+                    this.sessionHitHistory = this.sessionHitHistory.filter(h => h.bar >= minBarAllowed);
+
+                    if (this.scoreDisplay && this.sessionHitHistory.length > 0) {
+                        const sum = this.sessionHitHistory.reduce((acc, h) => acc + h.score, 0);
+                        const avg = Math.round(sum / this.sessionHitHistory.length);
+                        this.scoreDisplay.textContent = `${avg}% AVG (8 BARS)`;
                     }
                 }
                 
@@ -1002,13 +1010,8 @@ class PocketLabApp {
              // Queue management
              this.expectedHits.push({ time: scheduleObj.time, beatIndex: scheduleObj.beatIndex });
              
-             // If debug is on, money beat uses 8th notes, so we must track 8th note targets to grade against
-             if (this.isDebug) {
-                 const beatLengthSecs = 60.0 / this.metronome.bpm;
-                 this.expectedHits.push({ time: scheduleObj.time + (beatLengthSecs / 2.0), beatIndex: -1 });
-                 // Also sort expectedHits just in case
-                 this.expectedHits.sort((a,b) => a.time - b.time);
-             }
+             // Ensure sorted list after pushing (though metronome should send sequentially)
+             this.expectedHits.sort((a,b) => a.time - b.time);
              
              // Clear out old expectations to prevent memory leak
              const nowAudio = this.metronome.audioContext.currentTime;
