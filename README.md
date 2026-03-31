@@ -4,6 +4,9 @@ A high-precision Web MIDI drumming coach designed to diagnose timing offsets, vi
 
 ## 🚀 Getting Started
 
+> [!WARNING]
+> **DEVELOPMENT NOTE:** When testing or modifying JavaScript files (especially ES Modules like `app.js` and `midi.js`), **open the Chrome DevTools Network tab and check "Disable cache"**. The browser will aggressively cache these files, which can cause it to ignore your local changes and load stale code!
+
 This application is built with vanilla HTML, CSS, and JavaScript to maximize performance and minimize dependency overhead. This approach ensures low latency for MIDI processing and Canvas/SVG rendering.
 
 ### Prerequisites

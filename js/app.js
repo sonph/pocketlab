@@ -57,10 +57,12 @@ class PocketLabApp {
             console.warn("Could not load local config", e);
         }
 
-        const saveConfig = () => {
+        this.saveConfig = () => {
             try {
                 localStorage.setItem('pocketlab_config', JSON.stringify(this.localConfig));
-            } catch (e) {}
+            } catch (e) {
+                console.error("Failed to save config:", e);
+            }
         };
 
         const playBtn = document.getElementById('play-btn');
@@ -107,7 +109,7 @@ class PocketLabApp {
             
             if (this.localConfig) {
                 this.localConfig['bpm'] = bpm;
-                saveConfig();
+                this.saveConfig();
             }
         };
 
@@ -152,7 +154,7 @@ class PocketLabApp {
                 
                 if (this.localConfig) {
                     this.localConfig[property] = val;
-                    saveConfig();
+                    this.saveConfig();
                 }
             };
             el.addEventListener('change', handler);
@@ -206,7 +208,7 @@ class PocketLabApp {
                     
                     if (this.localConfig) {
                         this.localConfig[prop] = e.target.value;
-                        saveConfig();
+                        this.saveConfig();
                     }
                 });
                 this[prop] = el.value;
@@ -235,11 +237,22 @@ class PocketLabApp {
         
         const mVol = document.getElementById('setting-master-volume');
         if (mVol) {
+            if (this.localConfig && this.localConfig.masterVolume !== undefined) {
+                mVol.value = this.localConfig.masterVolume * 100;
+                this.metronome.masterVolume = this.localConfig.masterVolume;
+                if (this.metronome.masterGainNode) {
+                    this.metronome.masterGainNode.gain.value = this.localConfig.masterVolume;
+                }
+            }
             mVol.addEventListener('input', (e) => {
                 const vol = parseFloat(e.target.value) / 100.0;
                 this.metronome.masterVolume = vol;
                 if (this.metronome.masterGainNode) {
                     this.metronome.masterGainNode.gain.value = vol;
+                }
+                if (this.localConfig) {
+                    this.localConfig.masterVolume = vol;
+                    this.saveConfig();
                 }
             });
         }
@@ -248,13 +261,30 @@ class PocketLabApp {
             const chk = document.getElementById(`setting-pattern-${pat}`);
             const slider = document.getElementById(`vol-pattern-${pat}`);
             if (chk) {
+                if (this.localConfig && this.localConfig[`patternChk_${pat}`] !== undefined) {
+                    chk.checked = this.localConfig[`patternChk_${pat}`];
+                    this.metronome.patterns[pat] = chk.checked;
+                }
                 chk.addEventListener('change', (e) => {
                     this.metronome.patterns[pat] = e.target.checked;
+                    if (this.localConfig) {
+                        this.localConfig[`patternChk_${pat}`] = e.target.checked;
+                        this.saveConfig();
+                    }
                 });
             }
             if (slider) {
+                if (this.localConfig && this.localConfig[`patternVol_${pat}`] !== undefined) {
+                    slider.value = this.localConfig[`patternVol_${pat}`] * 100;
+                    this.metronome.patternVolumes[pat] = this.localConfig[`patternVol_${pat}`];
+                }
                 slider.addEventListener('input', (e) => {
-                    this.metronome.patternVolumes[pat] = parseFloat(e.target.value) / 100.0;
+                    const vol = parseFloat(e.target.value) / 100.0;
+                    this.metronome.patternVolumes[pat] = vol;
+                    if (this.localConfig) {
+                        this.localConfig[`patternVol_${pat}`] = vol;
+                        this.saveConfig();
+                    }
                 });
             }
         });
@@ -278,6 +308,9 @@ class PocketLabApp {
         
         const graphScaleSel = document.getElementById('setting-graphScale');
         if (graphScaleSel) {
+            if (this.localConfig && this.localConfig.graphScale !== undefined) {
+                graphScaleSel.value = this.localConfig.graphScale;
+            }
             graphScaleSel.addEventListener('change', (e) => {
                 if (this.visualizer) {
                     this.visualizer.setMeasureMode(e.target.value);
@@ -285,16 +318,28 @@ class PocketLabApp {
                 if (this.histogram) {
                     this.histogram.setMeasureMode(e.target.value);
                 }
+                if (this.localConfig) {
+                    this.localConfig.graphScale = e.target.value;
+                    this.saveConfig();
+                }
             });
         }
         
         const fadeConfig = document.getElementById('setting-fadeSeconds');
         const fadeDisplay = document.getElementById('display-fadeSeconds');
         if (fadeConfig) {
+            if (this.localConfig && this.localConfig.fadeSeconds !== undefined) {
+                fadeConfig.value = this.localConfig.fadeSeconds;
+                if (fadeDisplay) fadeDisplay.textContent = `${this.localConfig.fadeSeconds.toFixed(1)}s`;
+            }
             fadeConfig.addEventListener('input', (e) => {
                 const val = parseFloat(e.target.value);
                 if (fadeDisplay) fadeDisplay.textContent = `${val.toFixed(1)}s`;
                 if (this.visualizer) this.visualizer.fadeSeconds = val;
+                if (this.localConfig) {
+                    this.localConfig.fadeSeconds = val;
+                    this.saveConfig();
+                }
             });
         }
         
@@ -520,6 +565,19 @@ class PocketLabApp {
             }
         }
 
+        // Load localized MIDI configuration if available
+        if (this.localConfig) {
+            if (this.localConfig.mappings) {
+                this.midi.mappings = this.localConfig.mappings;
+            }
+            if (this.localConfig.ghostThreshold !== undefined) {
+                this.midi.ghostThreshold = this.localConfig.ghostThreshold;
+            }
+            if (this.localConfig.latencySys !== undefined) {
+                this.midi.latencySys = this.localConfig.latencySys;
+            }
+        }
+
         // Ghost Note Config & Calibration
         const ghostThresh = document.getElementById('hw-ghost-threshold');
         const ghostBtn = document.getElementById('btn-calibrate-ghost');
@@ -530,6 +588,10 @@ class PocketLabApp {
                 let val = parseInt(e.target.value);
                 if (isNaN(val)) val = 0;
                 this.midi.ghostThreshold = val;
+                if (this.localConfig) {
+                    this.localConfig.ghostThreshold = val;
+                    this.saveConfig();
+                }
                 if (this.visualizer) this.visualizer.minVelocity = val;
             });
             ghostThresh.value = this.midi.ghostThreshold;
@@ -538,7 +600,16 @@ class PocketLabApp {
 
         const mergeRideChk = document.getElementById('setting-merge-ride');
         if (mergeRideChk) {
-            mergeRideChk.addEventListener('change', () => this.renderMappingTable());
+            if (this.localConfig && this.localConfig.mergeRide !== undefined) {
+                mergeRideChk.checked = this.localConfig.mergeRide;
+            }
+            mergeRideChk.addEventListener('change', () => {
+                if (this.localConfig) {
+                    this.localConfig.mergeRide = mergeRideChk.checked;
+                    this.saveConfig();
+                }
+                this.renderMappingTable();
+            });
         }
 
         if (ghostBtn) {
@@ -558,6 +629,10 @@ class PocketLabApp {
                     
                     const newThreshold = this.midi.ghostCalibrationMax > 0 ? this.midi.ghostCalibrationMax + 1 : this.midi.ghostThreshold;
                     this.midi.ghostThreshold = newThreshold;
+                    if (this.localConfig) {
+                        this.localConfig.ghostThreshold = newThreshold;
+                        this.saveConfig();
+                    }
                     if (this.visualizer) this.visualizer.minVelocity = newThreshold;
                     if (ghostThresh) ghostThresh.value = newThreshold;
                     if (ghostStatus) {
@@ -576,6 +651,10 @@ class PocketLabApp {
         // Live Mapping
         this.renderMappingTable();
         this.midi.onLiveMapComplete = (instrument, noteIdsArray) => {
+            if (this.localConfig) {
+                this.localConfig.mappings = this.midi.mappings;
+                this.saveConfig();
+            }
             this.renderMappingTable();
         };
 
@@ -603,6 +682,10 @@ class PocketLabApp {
                     calStatus.textContent = `Hit! Raw: ${offset.toFixed(1)}ms | Avg: ${avg.toFixed(1)}ms | Left: ${remaining}`;
                     if (remaining <= 0) {
                         calStatus.textContent = `Calibration Complete. L_sys applied: ${this.midi.latencySys.toFixed(1)}ms.`;
+                        if (this.localConfig) {
+                            this.localConfig.latencySys = this.midi.latencySys;
+                            this.saveConfig();
+                        }
                         this.metronome.startStop(); // Kill metronome
                         this.metronome.onNoteScheduled = null;
                         btnCalibration.disabled = false;
@@ -764,8 +847,15 @@ class PocketLabApp {
         const hwConsole = document.getElementById('hw-console');
 
         if (levelSel) {
+            if (this.localConfig && this.localConfig.logLevel !== undefined) {
+                levelSel.value = this.localConfig.logLevel;
+            }
             levelSel.addEventListener('change', (e) => {
                 this.midi.logLevel = parseInt(e.target.value);
+                if (this.localConfig) {
+                    this.localConfig.logLevel = parseInt(e.target.value);
+                    this.saveConfig();
+                }
             });
             this.midi.logLevel = parseInt(levelSel.value);
         }
@@ -836,14 +926,30 @@ class PocketLabApp {
                 const valStr = e.target.value;
                 const arr = valStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
                 this.midi.updateMap(id, arr, null, null);
+                if (this.localConfig) {
+                    this.localConfig.mappings = this.midi.mappings;
+                    this.saveConfig();
+                }
                 this.renderMappingTable(); 
             });
             
             const colInput = document.getElementById(`map-col-${id}`);
-            if (colInput) colInput.addEventListener('change', (e) => this.midi.updateMap(id, null, null, e.target.value));
+            if (colInput) colInput.addEventListener('change', (e) => {
+                this.midi.updateMap(id, null, null, e.target.value);
+                if (this.localConfig) {
+                    this.localConfig.mappings = this.midi.mappings;
+                    this.saveConfig();
+                }
+            });
             
             const shapeSel = document.getElementById(`map-shape-${id}`);
-            if (shapeSel) shapeSel.addEventListener('change', (e) => this.midi.updateMap(id, null, e.target.value, null));
+            if (shapeSel) shapeSel.addEventListener('change', (e) => {
+                this.midi.updateMap(id, null, e.target.value, null);
+                if (this.localConfig) {
+                    this.localConfig.mappings = this.midi.mappings;
+                    this.saveConfig();
+                }
+            });
         }
 
         const liveBtns = document.querySelectorAll('.live-map-btn');
@@ -860,6 +966,10 @@ class PocketLabApp {
             btn.addEventListener('click', (e) => {
                 const mapId = e.currentTarget.dataset.id;
                 this.midi.clearMap(mapId);
+                if (this.localConfig) {
+                    this.localConfig.mappings = this.midi.mappings;
+                    this.saveConfig();
+                }
                 this.renderMappingTable();
             });
         });
