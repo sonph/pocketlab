@@ -160,16 +160,44 @@
         </div>
 
         <!-- Main Visualization Layer -->
-        <div class="panel-lab surface" id="panel-lab" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; margin-top: 1rem; border-color: rgba(255,255,255,0.1) !important; padding: 0;">
+        <div class="panel-lab surface" id="panel-lab" style="flex: 1; display: flex; flex-direction: row; overflow: hidden; margin-top: 1rem; border-color: rgba(255,255,255,0.1) !important; padding: 0;">
             
-            <!-- Scatter Plot (Top 70%) -->
-            <div style="flex: 7; position: relative; border-bottom: 1px solid rgba(255,255,255,0.2);" data-help="Open Ended Scatter Plot. X-Axis: Timing Error. Y-Axis: Velocity. Inverse decaying notes fade based on your Advanced tuning.">
-                <canvas id="lab-canvas" style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
+            <!-- Repeating Time Series Plot (Left 60%) -->
+            <div style="flex: 6; position: relative; border-right: 1px solid rgba(255,255,255,0.2); display: flex; flex-direction: column;" data-help="Multi-Track Timeline. A scrolling sequencer grid plotting your exact hits in real-time. Loops according to the window length.">
+                <div style="position: absolute; top: 10px; right: 10px; z-index: 5; display: flex; gap: 0.5rem; align-items: center; background: rgba(0,0,0,0.5); padding: 0.3rem 0.6rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">
+                    <label style="color: var(--color-primary-accent); font-size: 0.8rem; text-transform: uppercase;">Grid:</label>
+                    <select id="setting-timeline-grid" style="background: transparent; color: white; border: none; font-size: 0.85rem; font-weight: bold; cursor: pointer; outline: none; margin-right: 0.5rem;">
+                        <option value="1">Quarter</option>
+                        <option value="2">8ths</option>
+                        <option value="4" selected>16ths</option>
+                        <option value="3">8th Triplets</option>
+                        <option value="6">16th Triplets</option>
+                    </select>
+
+                    <label style="color: var(--color-primary-accent); font-size: 0.8rem; text-transform: uppercase;">Window:</label>
+                    <select id="setting-timeline-window" style="background: transparent; color: white; border: none; font-size: 0.85rem; font-weight: bold; cursor: pointer; outline: none;">
+                        <option value="1">1 Bar</option>
+                        <option value="2" selected>2 Bars</option>
+                        <option value="4">4 Bars</option>
+                    </select>
+                </div>
+                <!-- Adding pointer-events: none so it doesn't block hover events of the overarching div, though maybe fine without. Will just place canvas absolutely over it if it needs strict scaling. Actually, flex: 1 is fine since we use ResizeObserver in the JS classes usually. -->
+                <div style="flex: 1; position: relative; width: 100%; height: 100%;">
+                    <canvas id="timeline-canvas" style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
+                </div>
             </div>
-            
-            <!-- Histogram Bell Curve (Bottom 30%) -->
-            <div style="flex: 3; position: relative; background: rgba(0,0,0,0.2);" data-help="Pocket Heatmap (Session Histogram). A cumulative volume bell-curve collecting every strike across your active session.">
-                <canvas id="histogram-canvas" style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
+
+            <!-- Legacy Analytics Column (Right 40%) -->
+            <div style="flex: 4; display: flex; flex-direction: column; overflow: hidden;">
+                <!-- Scatter Plot (Top 70%) -->
+                <div style="flex: 7; position: relative; border-bottom: 1px solid rgba(255,255,255,0.2);" data-help="Open Ended Scatter Plot. X-Axis: Timing Error. Y-Axis: Velocity. Inverse decaying notes fade based on your Advanced tuning.">
+                    <canvas id="lab-canvas" style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
+                </div>
+                
+                <!-- Histogram Bell Curve (Bottom 30%) -->
+                <div style="flex: 3; position: relative; background: rgba(0,0,0,0.2);" data-help="Pocket Heatmap (Session Histogram). A cumulative volume bell-curve collecting every strike across your active session.">
+                    <canvas id="histogram-canvas" style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
+                </div>
             </div>
         </div>
 

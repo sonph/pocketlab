@@ -2,6 +2,7 @@ import { Metronome } from './metronome.js';
 import { MidiEngine } from './midi.js';
 import { Visualizer } from './visualizer.js';
 import { Histogram } from './histogram.js';
+import { TimelineVisualizer } from './timeline.js';
 
 /**
  * Pocket Lab Core Application
@@ -14,6 +15,7 @@ class PocketLabApp {
         this.midi = new MidiEngine();
         this.visualizer = null;
         this.histogram = null;
+        this.timeline = null;
         this.expectedHits = []; // Queue of structural times the user *should* hit
         this.init();
     }
@@ -59,6 +61,9 @@ class PocketLabApp {
             this.metronome.setBpm(bpm);
             if (this.visualizer) this.visualizer.setBpm(bpm);
             if (this.histogram) this.histogram.setBpm(bpm);
+            const winSel = document.getElementById('setting-timeline-window');
+            const gridSel = document.getElementById('setting-timeline-grid');
+            if (this.timeline) this.timeline.updateConfig(winSel ? winSel.value : 2, bpm, this.metronome.tsCount, gridSel ? gridSel.value : 4);
         };
 
         if (bpmInput) {
@@ -121,6 +126,26 @@ class PocketLabApp {
         
         bindSetting('setting-ts-count', 'tsCount', true);
         bindSetting('setting-ts-subdiv', 'tsSubdiv', true);
+        
+        // Listen to timeline config changes
+        const winSel = document.getElementById('setting-timeline-window');
+        const gridSel = document.getElementById('setting-timeline-grid');
+        const tsCountInput = document.getElementById('setting-ts-count');
+        
+        const updateTimelineParams = () => {
+            if (this.timeline) {
+                this.timeline.updateConfig(
+                    winSel ? winSel.value : 2, 
+                    this.metronome.bpm, 
+                    this.metronome.tsCount,
+                    gridSel ? gridSel.value : 4
+                );
+            }
+        };
+
+        if (winSel) winSel.addEventListener('change', updateTimelineParams);
+        if (gridSel) gridSel.addEventListener('change', updateTimelineParams);
+        if (tsCountInput) tsCountInput.addEventListener('change', updateTimelineParams);
         
         const mVol = document.getElementById('setting-master-volume');
         if (mVol) {
@@ -252,6 +277,16 @@ class PocketLabApp {
             } else if (!this.metronome.isPlaying) {
                 // Do not reset the visual display to 0:00 here so the last record holds
             }
+            
+            if (this.timeline) {
+                const isRunning = this.metronome.isPlaying && this.metronome.sessionStartTime && this.metronome.currentBarTotal >= this.metronome.countInBars;
+                let activeSecs = -1;
+                if (isRunning) {
+                    activeSecs = this.metronome.audioContext.currentTime - this.metronome.sessionStartTime;
+                }
+                this.timeline.render(isRunning, activeSecs);
+            }
+            
             requestAnimationFrame(renderTimer);
         };
         requestAnimationFrame(renderTimer);
@@ -456,6 +491,20 @@ class PocketLabApp {
                 hitDetails.config = this.midi.mappings['hihat'];
             }
 
+            // Timeline Routing
+            if (this.timeline && this.metronome.isPlaying && this.metronome.sessionStartTime) {
+                const elapsedCtx = this.metronome.audioContext.currentTime - this.metronome.sessionStartTime;
+                if (elapsedCtx >= 0) {
+                    this.timeline.addHit(
+                        hitDetails.instrument,
+                        hitDetails.velocity,
+                        hitDetails.config.color,
+                        hitDetails.config.shape,
+                        elapsedCtx
+                    );
+                }
+            }
+
             // Find the closest expected hit in our rolling window
             if (this.expectedHits.length === 0 || !this.visualizer) return;
             
@@ -610,6 +659,11 @@ class PocketLabApp {
         // Initialize Canvas API/SVG rendering
         this.visualizer = new Visualizer('lab-canvas');
         this.histogram = new Histogram('histogram-canvas');
+        this.timeline = new TimelineVisualizer('timeline-canvas');
+        const winSel = document.getElementById('setting-timeline-window');
+        const gridSel = document.getElementById('setting-timeline-grid');
+        this.timeline.updateConfig(winSel ? winSel.value : 2, this.metronome.bpm, this.metronome.tsCount, gridSel ? gridSel.value : 4);
+        
         console.log("Canvas mapping established.");
 
         // Tap into the metronome loop to populate expectations
@@ -708,7 +762,8 @@ class PocketLabApp {
                             this.midi.onHit({
                                 instrument: note.id,
                                 velocity: Math.floor(note.vel + (Math.random()*16 - 8)),
-                                timestamp: performance.now()
+                                rawTimestamp: performance.now(),
+                                config: this.midi.mappings[note.id]
                             });
                         }
                     }, delayMs);
