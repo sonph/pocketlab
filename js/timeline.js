@@ -68,6 +68,8 @@ export class TimelineVisualizer {
         
         let playheadXRatio = 0;
         let activeWindowIndex = -1;
+        let halfBeatRatio = 0;
+        let fadeZoneRatio = 0;
         
         if (isPlaying && elapsedSecs >= 0) {
             this.frozenPlayheadSecs = elapsedSecs; // store for stop state
@@ -78,12 +80,15 @@ export class TimelineVisualizer {
         if (renderSecs >= 0) {
             const secondsPerBar = (60.0 / this.bpm) * this.tsCount;
             const windowDuration = secondsPerBar * this.windowBars;
+            halfBeatRatio = (30.0 / this.bpm) / windowDuration;
+            fadeZoneRatio = halfBeatRatio * 5.0; // Starts fading 2.5 beats early
+            
             activeWindowIndex = Math.floor(renderSecs / windowDuration);
             playheadXRatio = (renderSecs % windowDuration) / windowDuration;
             
-            // Clear old hits when wrapping around
+            // Maintain current and previous window hits for wiping effect
             if (activeWindowIndex !== this.currentWindowIndex && isPlaying) {
-                this.hits = this.hits.filter(h => h.windowIndex === activeWindowIndex);
+                this.hits = this.hits.filter(h => h.windowIndex >= activeWindowIndex - 1);
                 this.currentWindowIndex = activeWindowIndex;
             }
         }
@@ -127,19 +132,43 @@ export class TimelineVisualizer {
         // Background Math Grids
         const validGridConfig = this.gridSubdivs || 4;
         const totalSubdivs = this.windowBars * this.tsCount * validGridConfig;
+        const subdivsPerBar = this.tsCount * validGridConfig;
+        
         for (let b = 0; b <= totalSubdivs; b++) {
             const x = (b / totalSubdivs) * this.canvas.width;
             this.ctx.beginPath();
             this.ctx.moveTo(x, 0);
             this.ctx.lineTo(x, this.canvas.height);
-            this.ctx.strokeStyle = (b % validGridConfig === 0) ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)';
+            
+            if (b % subdivsPerBar === 0) {
+                this.ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+                this.ctx.lineWidth = 2; // bolder bar separators
+            } else if (b % validGridConfig === 0) {
+                this.ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                this.ctx.lineWidth = 1;
+            } else {
+                this.ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+                this.ctx.lineWidth = 1;
+            }
             this.ctx.stroke();
         }
+        this.ctx.lineWidth = 1; // reset after grid loop
 
         // Plot registered strikes
         for (const hit of this.hits) {
-            // Safety: render only current active window index
-            if (hit.windowIndex !== activeWindowIndex) continue;
+            // Render current active window, and previous window if ahead of playhead
+            if (hit.windowIndex !== activeWindowIndex && hit.windowIndex !== activeWindowIndex - 1) continue;
+            
+            let fadeMult = 1.0;
+            if (hit.windowIndex === activeWindowIndex - 1) {
+                const distanceActive = hit.hitX - playheadXRatio;
+                if (distanceActive <= halfBeatRatio) {
+                    continue; // Erase previous loop note as playhead approaches closely
+                } else if (distanceActive < fadeZoneRatio) {
+                    // Smoothly fade the note away before it hits the erase boundary
+                    fadeMult = (distanceActive - halfBeatRatio) / (fadeZoneRatio - halfBeatRatio);
+                }
+            }
             
             const trackIdx = this.tracks.indexOf(hit.instrument);
             if (trackIdx === -1) continue;
@@ -148,7 +177,7 @@ export class TimelineVisualizer {
             const y = (trackIdx * trackHeight) + (trackHeight / 2);
             
             // Opacity maps physical velocity. Base 10% floor for extreme ghost hits.
-            const alpha = Math.max(0.1, hit.velocity / 127.0);
+            const alpha = Math.max(0.1, hit.velocity / 127.0) * fadeMult;
             
             this.ctx.fillStyle = hit.color;
             this.ctx.globalAlpha = alpha;
