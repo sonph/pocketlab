@@ -22,6 +22,8 @@
                 <div style="display: flex; gap: 1rem; align-items: baseline;">
                     <span id="timer-display" data-help="Active elapsed time tracking." style="font-size: 1.2rem; font-variant-numeric: tabular-nums;">0:00</span>
                     <span id="bar-display" data-help="Current measure count in the active setting interval." style="font-size: 1.2rem; font-variant-numeric: tabular-nums; color: var(--color-primary-accent);">BAR 1</span>
+                    <div style="width: 1px; height: 1.2rem; background: rgba(255,255,255,0.2); align-self: center; margin: 0 0.5rem;"></div>
+                    <span id="score-display" data-help="Live Average Timing Score for the current session stream." style="font-size: 1.2rem; font-weight: bold; font-variant-numeric: tabular-nums; color: var(--color-warning);">--% AVG</span>
                 </div>
             </div>
 
@@ -344,6 +346,18 @@
         </div>
     </dialog>
     
+    <!-- Session Result Modal -->
+    <dialog id="modal-session-result" style="background: var(--color-surface); color: white; padding: 2rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; max-width: 400px; width: 90%; margin: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); text-align: center;">
+        <h2 style="margin-top: 0; color: var(--color-primary-accent);">Practice Complete!</h2>
+        <div style="font-size: 4rem; font-weight: bold; margin: 1rem 0; font-variant-numeric: tabular-nums;" id="result-score">--%</div>
+        <p style="color: #94a3b8; margin-bottom: 2rem;" id="result-desc">Your session has been saved to the log.</p>
+        
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+            <button id="btn-result-delete" style="cursor: pointer; background: transparent; color: var(--color-critical); border: 1px solid var(--color-critical); padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold;">Discard</button>
+            <button id="btn-result-close" style="cursor: pointer; background: var(--color-primary-accent); color: black; border: none; padding: 0.5rem 2rem; border-radius: 4px; font-weight: bold;">Close</button>
+        </div>
+    </dialog>
+
     <!-- Scripts -->
     <script type="module" src="js/app.js"></script>
 </body>

@@ -94,10 +94,10 @@ For now, perform manual verification through the development server, ensuring yo
 - [x] Implement the Pocket Heatmap bell-curve
 
 ### Scoring & Success Metrics
-- [ ] Implement the Timing Score mathematical formula
+- [x] Implement the Timing Score mathematical formula
 - [ ] Implement the Limb Alignment Score formula
 - [ ] Engineer the Global Session Score aggregator
-- [ ] Setup Session History local storage persistence
+- [x] Setup Session History local storage persistence
 
 ### UI Context
 - [x] Lay out the 3-panel screen grid Architecture

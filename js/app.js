@@ -23,6 +23,9 @@ class PocketLabApp {
         this.lastEvaluatedFeedbackTarget = -1;
         this.feedbackTriggerMode = 'snare';
         this.feedbackDifficultyMode = 'medium';
+        this.sessionHitCount = 0;
+        this.sessionScoreSum = 0;
+        this.scoreDisplay = document.getElementById('score-display');
         this.init();
     }
 
@@ -66,6 +69,13 @@ class PocketLabApp {
             playBtn.addEventListener('click', () => {
                 this.metronome.startStop();
                 playBtn.textContent = this.metronome.isPlaying ? 'Stop' : 'Start';
+                
+                if (this.metronome.isPlaying) {
+                    this.sessionHitCount = 0;
+                    this.sessionScoreSum = 0;
+                    if (this.scoreDisplay) this.scoreDisplay.textContent = '--% AVG';
+                }
+                
                 if (this.visualizer) {
                     this.visualizer.isPlaying = this.metronome.isPlaying;
                 }
@@ -326,9 +336,54 @@ class PocketLabApp {
         const timerDisplay = document.getElementById('timer-display');
         const barDisplay = document.getElementById('bar-display');
         
+        // Setup Session History Log
+        this.sessionHistory = [];
+        try {
+            const histSaved = localStorage.getItem('pocketlab_history');
+            if (histSaved) this.sessionHistory = JSON.parse(histSaved);
+        } catch(e) {}
+
+        const resultModal = document.getElementById('modal-session-result');
+        const resultScore = document.getElementById('result-score');
+        const resultDesc = document.getElementById('result-desc');
+        const btnDelete = document.getElementById('btn-result-delete');
+        const btnClose = document.getElementById('btn-result-close');
+
+        let lastSavedSessionObj = null;
+
+        if (btnClose) btnClose.addEventListener('click', () => resultModal.close());
+        if (btnDelete) btnDelete.addEventListener('click', () => {
+            if (lastSavedSessionObj) {
+                this.sessionHistory = this.sessionHistory.filter(h => h !== lastSavedSessionObj);
+                localStorage.setItem('pocketlab_history', JSON.stringify(this.sessionHistory));
+                resultDesc.textContent = "Session discarded.";
+                lastSavedSessionObj = null;
+                setTimeout(() => resultModal.close(), 1000);
+            }
+        });
+
         this.metronome.onIntervalComplete = () => {
             if (playBtn) playBtn.textContent = 'Start';
             if (timerDisplay) timerDisplay.textContent = 'DONE';
+            
+            // Ensure this is only triggered on structural completions, not user stop overrides
+            const finalScore = this.sessionHitCount > 0 ? Math.round(this.sessionScoreSum / this.sessionHitCount) : 0;
+            
+            const sessionObj = {
+                date: new Date().toISOString(),
+                mode: this.metronome.intervalMode,
+                bpm: this.metronome.bpm,
+                hits: this.sessionHitCount,
+                score: finalScore
+            };
+            
+            this.sessionHistory.push(sessionObj);
+            localStorage.setItem('pocketlab_history', JSON.stringify(this.sessionHistory));
+            lastSavedSessionObj = sessionObj;
+            
+            if (resultScore) resultScore.textContent = `${finalScore}%`;
+            if (resultDesc) resultDesc.textContent = "Session saved to history.";
+            if (resultModal) resultModal.showModal();
         };
 
         const renderTimer = () => {
@@ -599,6 +654,16 @@ class PocketLabApp {
             // Expected time physically arriving from drum
             const expectedPerf = expectedHitPerfTime(closestHit.time);
             const offsetMs = now - expectedPerf;
+            
+            // Calculate Timing Score (Gaussian model from SPECS 6A)
+            const duration16thMs = (60000.0 / this.metronome.bpm) / 4.0;
+            const sigma = 0.15;
+            // e^(- (abs(dt) / (D_16th * sigma))^2 )
+            const errorRatio = Math.abs(offsetMs) / (duration16thMs * sigma);
+            const timingScore = 100.0 * Math.exp(-(errorRatio * errorRatio));
+            
+            // Pass the generated score inside the hitDetails so visualizers or other processors can use it
+            hitDetails.timingScore = timingScore;
 
             if (this.limbMatrix && this.metronome.isPlaying && this.metronome.sessionStartTime) {
                 this.limbMatrix.addHit(
@@ -664,7 +729,17 @@ class PocketLabApp {
             
             // Only plot if it's within a very wide logical threshold (e.g. they aren't just jamming randomly while click is running)
             if (Math.abs(offsetMs) < 400) {
-                 if (this.visualizer) {
+                
+                if (this.metronome.isPlaying && !this.metronome.isCountInPhase) {
+                    this.sessionHitCount++;
+                    this.sessionScoreSum += timingScore;
+                    if (this.scoreDisplay) {
+                        const avg = Math.round(this.sessionScoreSum / this.sessionHitCount);
+                        this.scoreDisplay.textContent = `${avg}% AVG`;
+                    }
+                }
+                
+                if (this.visualizer) {
                      this.visualizer.addHit(
                          hitDetails.velocity, 
                          offsetMs, 
