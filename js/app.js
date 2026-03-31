@@ -332,11 +332,25 @@ class PocketLabApp {
         const btnToggleHelp = document.getElementById('btn-toggle-help');
         const helpFooter = document.getElementById('help-footer');
         if (btnToggleHelp && helpFooter) {
+            const setHelpVisibility = (isVisible) => {
+                helpFooter.style.display = isVisible ? 'flex' : 'none';
+                btnToggleHelp.textContent = isVisible ? 'Hide Help ▽' : 'Show Help △';
+                btnToggleHelp.style.color = isVisible ? '#94a3b8' : 'white';
+                
+                if (this.localConfig) {
+                    this.localConfig.helpVisible = isVisible;
+                    this.saveConfig();
+                }
+            };
+
+            // Load initial state
+            if (this.localConfig && this.localConfig.helpVisible !== undefined) {
+                setHelpVisibility(this.localConfig.helpVisible);
+            }
+
             btnToggleHelp.addEventListener('click', () => {
-                const isHidden = helpFooter.style.display === 'none';
-                helpFooter.style.display = isHidden ? 'flex' : 'none';
-                btnToggleHelp.textContent = isHidden ? 'Hide Help ▽' : 'Show Help △';
-                btnToggleHelp.style.color = isHidden ? '#94a3b8' : 'white';
+                const isCurrentlyVisible = helpFooter.style.display !== 'none';
+                setHelpVisibility(!isCurrentlyVisible);
             });
         }
 
