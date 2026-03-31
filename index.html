@@ -33,9 +33,20 @@
                 <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="1">+1</button>
                 <button class="bpm-step" style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);" data-step="5">+5</button>
             </div>
+            
+            <!-- Master Volume -->
+            <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 8px;" data-help="Global metronome audio output volume.">
+                <span>🔊</span>
+                <input type="range" id="setting-master-volume" value="100" min="0" max="100" style="width: 80px; align-self: center; margin-top: 0.2rem;">
+            </div>
 
             <!-- Core Settings -->
             <div style="display: flex; align-items: center; gap: 0.8rem;">
+                <div style="display: flex; align-items: center; background: rgba(0,0,0,0.3); padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); font-weight: bold; gap: 0.3rem;" title="Time Signature" data-help="Set the Time Signature (Beats per Bar / Subdivision). Hits resolve primarily back to default quarter note pulses.">
+                    <input type="number" id="setting-ts-count" value="4" min="1" max="32" style="width: 30px; background: transparent; color: white; border: none; text-align: right; outline: none; -moz-appearance: textfield;">
+                    <span style="color: rgba(255,255,255,0.5);">/</span>
+                    <input type="number" id="setting-ts-subdiv" value="4" min="1" max="32" style="width: 30px; background: transparent; color: white; border: none; outline: none; -moz-appearance: textfield;">
+                </div>
                 <select id="setting-intervalMode" title="Interval Mode" data-help="Select 'Endless' to practice indefinitely, or set a focused duration filter which will auto-stop the clock." style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
                     <option value="endless">Endless</option>
                     <option value="1min">Focus (1 min)</option>
@@ -71,6 +82,37 @@
             <!-- Absolute Dropdown Overlay for Challenges -->
             <div id="expanded-rhythm-settings" style="display: none; position: absolute; top: calc(100% + 10px); left: 0; right: 0; background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); padding: 1.5rem; z-index: 20; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
                 <div style="display: flex; justify-content: space-around; gap: 2rem;">
+                    <!-- Subdivision Mixer -->
+                    <div style="flex: 1;">
+                        <h3 style="margin-top: 0; color: var(--color-primary-accent);">Subdivision Mixer</h3>
+                        <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic;">Enable secondary clicking layers and physically mix their volumes output levels.</p>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; margin-bottom: 0.2rem;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; width: 120px; font-weight: bold;"><input type="checkbox" id="setting-pattern-main" checked> Main Beat</label>
+                                <input type="range" id="vol-pattern-main" value="100" min="0" max="100" style="flex: 1;">
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; width: 120px;"><input type="checkbox" id="setting-pattern-8th"> 8th Note</label>
+                                <input type="range" id="vol-pattern-8th" value="50" min="0" max="100" style="flex: 1;">
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; width: 120px;"><input type="checkbox" id="setting-pattern-8thTrip"> 8th Triplet</label>
+                                <input type="range" id="vol-pattern-8thTrip" value="50" min="0" max="100" style="flex: 1;">
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; width: 120px;"><input type="checkbox" id="setting-pattern-16th"> 16th Note</label>
+                                <input type="range" id="vol-pattern-16th" value="50" min="0" max="100" style="flex: 1;">
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; width: 120px;"><input type="checkbox" id="setting-pattern-16thTrip"> 16th Triplet</label>
+                                <input type="range" id="vol-pattern-16thTrip" value="50" min="0" max="100" style="flex: 1;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="width: 1px; background: rgba(255,255,255,0.1);"></div>
+
                     <!-- Mute Bars -->
                     <div style="flex: 1;">
                         <h3 style="margin-top: 0;">Mute Bars</h3>

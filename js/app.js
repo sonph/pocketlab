@@ -118,6 +118,35 @@ class PocketLabApp {
         bindSetting('setting-shakyEnabled', 'shakyEnabled');
         bindSetting('setting-shakyRange', 'shakyRange', true);
         bindSetting('setting-shakyChance', 'shakyChance', true);
+        
+        bindSetting('setting-ts-count', 'tsCount', true);
+        bindSetting('setting-ts-subdiv', 'tsSubdiv', true);
+        
+        const mVol = document.getElementById('setting-master-volume');
+        if (mVol) {
+            mVol.addEventListener('input', (e) => {
+                const vol = parseFloat(e.target.value) / 100.0;
+                this.metronome.masterVolume = vol;
+                if (this.metronome.masterGainNode) {
+                    this.metronome.masterGainNode.gain.value = vol;
+                }
+            });
+        }
+        
+        ['main', '8th', '8thTrip', '16th', '16thTrip'].forEach(pat => {
+            const chk = document.getElementById(`setting-pattern-${pat}`);
+            const slider = document.getElementById(`vol-pattern-${pat}`);
+            if (chk) {
+                chk.addEventListener('change', (e) => {
+                    this.metronome.patterns[pat] = e.target.checked;
+                });
+            }
+            if (slider) {
+                slider.addEventListener('input', (e) => {
+                    this.metronome.patternVolumes[pat] = parseFloat(e.target.value) / 100.0;
+                });
+            }
+        });
 
         // UI toggles and Graph Settings
         const btnToggleChallenges = document.getElementById('btn-toggle-challenges');

@@ -14,6 +14,26 @@ export class Metronome {
         this.voicing = 'beep'; // beep, woodblock, voice
         this.emphasis = 'on-beat'; // on-beat, ands, 2and4
         
+        this.tsCount = 4;
+        this.tsSubdiv = 4;
+        this.masterVolume = 1.0;
+        
+        this.patterns = {
+            'main': true,
+            '8th': false,
+            '8thTrip': false,
+            '16th': false,
+            '16thTrip': false
+        };
+        this.patternVolumes = {
+            'main': 1.0,
+            '8th': 0.5,
+            '8thTrip': 0.5,
+            '16th': 0.5,
+            '16thTrip': 0.5
+        };
+        this.masterGainNode = null;
+        
         this.gapRadioMode = 'off'; // off, constant, random-beat, random-bar
         this.gapConstantOn = 1;
         this.gapConstantOff = 1;
@@ -28,7 +48,7 @@ export class Metronome {
         this.loadVoiceSamples();
 
         // State trackers
-        this.current16thNote = 0; 
+        this.currentTick = 0; // Out of (tsCount * 12)
         this.currentBarTotal = 0; 
         this.nextNoteTime = 0.0;
         this.timerWorker = null;
@@ -76,8 +96,14 @@ export class Metronome {
                 this.audioContext.resume();
             }
             
+            if (!this.masterGainNode) {
+                this.masterGainNode = this.audioContext.createGain();
+                this.masterGainNode.connect(this.audioContext.destination);
+            }
+            this.masterGainNode.gain.value = this.masterVolume;
+            
             this.isPlaying = true;
-            this.current16thNote = 0;
+            this.currentTick = 0;
             this.currentBarTotal = 0;
             this.sessionStartTime = null;
             
@@ -103,11 +129,15 @@ export class Metronome {
 
     nextNote() {
         const secondsPerBeat = 60.0 / this.bpm;
-        this.nextNoteTime += 0.25 * secondsPerBeat; 
+        // 12 internal micro-ticks per beat
+        this.nextNoteTime += (1.0 / 12.0) * secondsPerBeat; 
 
-        this.current16thNote++; 
-        if (this.current16thNote === 16) {
-            this.current16thNote = 0;
+        // Ticks cycle up to limit dictated by Time Signature count
+        const ticksPerBar = this.tsCount * 12;
+
+        this.currentTick++; 
+        if (this.currentTick >= ticksPerBar) {
+            this.currentTick = 0;
             this.currentBarTotal++;
             this.handleGapBarTransitions();
         }
@@ -153,33 +183,63 @@ export class Metronome {
         return false;
     }
 
-    shouldPlayEmphasis(note16th) {
+    shouldPlayEmphasis(tick) {
         if (this.emphasis === 'on-beat') {
-            return note16th % 4 === 0;
+            return tick % 12 === 0;
         } else if (this.emphasis === 'ands') {
-            return note16th % 4 === 2; // 16th resolution points at offbeat 8ths
+            return tick % 12 === 6; // exact middle of the beat
         } else if (this.emphasis === '2and4') {
-            return note16th === 4 || note16th === 12; 
+            const beatNumber = Math.floor(tick / 12);
+            return (beatNumber === 1 || beatNumber === 3) && (tick % 12 === 0); 
         }
         return false;
     }
 
-    scheduleNote(beatNumber16th, time) {
+    scheduleNote(tick, time) {
         const isCountInPhase = this.currentBarTotal < this.countInBars;
 
         // Kick off tracking timing explicitly when entering interval
-        if (this.current16thNote === 0 && this.currentBarTotal === this.countInBars && !this.sessionStartTime) {
+        if (this.currentTick === 0 && this.currentBarTotal === this.countInBars && !this.sessionStartTime) {
             this.sessionStartTime = time;
         }
 
+        // Determine specific layering triggers to allow active poly-rhythmic rendering
+        let playMainBeat = false;
         if (isCountInPhase) {
-            if (beatNumber16th % 4 !== 0) return;
+            playMainBeat = (tick % 12 === 0);
         } else {
-            if (!this.shouldPlayEmphasis(beatNumber16th)) return;
+            playMainBeat = this.shouldPlayEmphasis(tick);
+        }
+        
+        let subVoiceVol = 0.0;
+        if (tick % 12 !== 0 && !isCountInPhase) {
+            // Tick 6 (8th note) aligns with 8th, 16th, and 16thTrip grids
+            if (tick % 6 === 0) {
+                if (this.patterns['8th']) subVoiceVol = Math.max(subVoiceVol, this.patternVolumes['8th']);
+                if (this.patterns['16th']) subVoiceVol = Math.max(subVoiceVol, this.patternVolumes['16th']);
+                if (this.patterns['16thTrip']) subVoiceVol = Math.max(subVoiceVol, this.patternVolumes['16thTrip']);
+            }
+            // Ticks 4, 8 (8th Trip) align with 8thTrip and 16thTrip
+            else if (tick % 4 === 0) {
+                if (this.patterns['8thTrip']) subVoiceVol = Math.max(subVoiceVol, this.patternVolumes['8thTrip']);
+                if (this.patterns['16thTrip']) subVoiceVol = Math.max(subVoiceVol, this.patternVolumes['16thTrip']);
+            }
+            // Ticks 3, 9 (16th Note) align cleanly
+            else if (tick % 3 === 0) {
+                if (this.patterns['16th']) subVoiceVol = Math.max(subVoiceVol, this.patternVolumes['16th']);
+            }
+            // Ticks 2, 10 (16th Trip) align cleanly
+            else if (tick % 2 === 0) {
+                if (this.patterns['16thTrip']) subVoiceVol = Math.max(subVoiceVol, this.patternVolumes['16thTrip']);
+            }
         }
 
-        const isDownbeat = (beatNumber16th === 0);
-        const beatIndex = Math.floor(beatNumber16th / 4); 
+        if (!playMainBeat && subVoiceVol <= 0.0) {
+            return;
+        }
+
+        const isDownbeat = (tick === 0);
+        const beatIndex = Math.floor(tick / 12); 
 
         let scheduledTime = time;
         let gainValue = 1.0;
@@ -204,18 +264,36 @@ export class Metronome {
         }
 
         if (gainValue > 0.0) {
-            this.playVoice(isDownbeat, beatIndex, scheduledTime);
-            if (this.onNoteScheduled) {
+            // Trigger specific rendering paths
+            if (playMainBeat || isCountInPhase) {
+                if (this.patterns['main'] || isCountInPhase) {
+                    this.playVoice(isDownbeat, beatIndex, scheduledTime, this.patternVolumes['main']);
+                }
+            }
+            if (!isCountInPhase && subVoiceVol > 0.0) {
+                this.playSubdivisionVoice(scheduledTime, subVoiceVol);
+            }
+
+            // Alert engine mapping logic (Wait, only alert UI on explicit main hits for tracking graph metrics?)
+            // We pass it to the UI callback to render the ExpectedHits array
+            if (this.onNoteScheduled && (playMainBeat || isCountInPhase)) {
                 this.onNoteScheduled({ time: scheduledTime, isDownbeat });
             }
         }
     }
 
-    playVoice(isDownbeat, beatIndex, time) {
+    playVoice(isDownbeat, beatIndex, time, volume = 1.0) {
+        if (volume <= 0.0) return;
+        
         if (this.voicing === 'voice' && this.voiceBuffers[beatIndex]) { 
             const source = this.audioContext.createBufferSource();
+            const envelope = this.audioContext.createGain();
             source.buffer = this.voiceBuffers[beatIndex];
-            source.connect(this.audioContext.destination);
+            
+            source.connect(envelope);
+            envelope.connect(this.masterGainNode);
+            envelope.gain.value = volume;
+            
             source.start(time);
         } else if (this.voicing === 'woodblock') { 
             const osc = this.audioContext.createOscillator();
@@ -231,10 +309,10 @@ export class Metronome {
 
             osc.connect(filter);
             filter.connect(envelope);
-            envelope.connect(this.audioContext.destination);
+            envelope.connect(this.masterGainNode);
 
             envelope.gain.setValueAtTime(0, time);
-            envelope.gain.linearRampToValueAtTime(1, time + 0.005);
+            envelope.gain.linearRampToValueAtTime(volume, time + 0.005);
             envelope.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
 
             osc.start(time);
@@ -245,17 +323,38 @@ export class Metronome {
             const envelope = this.audioContext.createGain();
 
             osc.connect(envelope);
-            envelope.connect(this.audioContext.destination);
+            envelope.connect(this.masterGainNode);
 
             osc.frequency.value = isDownbeat ? 1200.0 : 800.0; 
 
             envelope.gain.setValueAtTime(0, time);
-            envelope.gain.linearRampToValueAtTime(1, time + 0.001);
+            envelope.gain.linearRampToValueAtTime(volume, time + 0.001);
             envelope.gain.exponentialRampToValueAtTime(0.001, time + 0.02);
 
             osc.start(time);
             osc.stop(time + 0.03);
         }
+    }
+
+    playSubdivisionVoice(time, volume) {
+        if (volume <= 0.0) return;
+        const osc = this.audioContext.createOscillator();
+        const envelope = this.audioContext.createGain();
+
+        osc.connect(envelope);
+        envelope.connect(this.masterGainNode);
+
+        // Subdivisions get a cleaner, lighter tick
+        osc.frequency.value = 1800.0; 
+        osc.type = 'triangle';
+
+        envelope.gain.setValueAtTime(0, time);
+        // Soften it aggressively so it doesn't overshadow the money beat
+        envelope.gain.linearRampToValueAtTime(volume * 0.3, time + 0.001); 
+        envelope.gain.exponentialRampToValueAtTime(0.001, time + 0.012);
+
+        osc.start(time);
+        osc.stop(time + 0.015);
     }
 
     scheduler() {
@@ -266,7 +365,7 @@ export class Metronome {
         }
 
         while (this.nextNoteTime < this.audioContext.currentTime + this.scheduleAheadTime) {
-            this.scheduleNote(this.current16thNote, this.nextNoteTime);
+            this.scheduleNote(this.currentTick, this.nextNoteTime);
             this.nextNote();
         }
         
