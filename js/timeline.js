@@ -14,12 +14,14 @@ export class TimelineVisualizer {
         
         this.currentWindowIndex = -1;
         this.frozenPlayheadSecs = -1;
+        this.needsRender = true;
     }
 
     resize() {
         const parent = this.canvas.parentElement;
         this.canvas.width = parent.clientWidth;
         this.canvas.height = parent.clientHeight;
+        this.needsRender = true;
         // Don't draw immediately if not initialized
     }
 
@@ -28,6 +30,7 @@ export class TimelineVisualizer {
         this.bpm = bpm || 120;
         this.tsCount = tsCount || 4;
         this.gridSubdivs = parseInt(gridSubdivisions) || 4;
+        this.needsRender = true;
     }
 
     addHit(instrument, velocity, color, shape, elapsedSecs) {
@@ -49,10 +52,15 @@ export class TimelineVisualizer {
             color,
             shape
         });
+        
+        this.needsRender = true;
     }
 
     render(isPlaying, elapsedSecs) {
         if (!this.ctx) return;
+        
+        if (!isPlaying && !this.needsRender) return;
+        this.needsRender = false;
         
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         

@@ -24,6 +24,7 @@ export class Visualizer {
         this.lastRenderRealTime = performance.now();
         this.isPlaying = false;
         this.minVelocity = 1;
+        this.needsRender = true;
         
         this.initResizeObserver();
         this.updateScaling(); // calculate immediately for correct axis rendering
@@ -38,6 +39,7 @@ export class Visualizer {
                 this.canvas.width = this.width * window.devicePixelRatio;
                 this.canvas.height = this.height * window.devicePixelRatio;
                 this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+                this.needsRender = true;
             }
         });
         observer.observe(this.canvas.parentElement);
@@ -57,17 +59,20 @@ export class Visualizer {
         }
         
         this.updateScaling();
+        this.needsRender = true;
     }
     
     setMeasureMode(mode) {
         this.measureMode = mode;
         this.updateScaling();
+        this.needsRender = true;
     }
     
     setBpm(bpm) {
         this.bpm = bpm;
         if (this.measureMode === '16th') {
             this.updateScaling();
+            this.needsRender = true;
         }
     }
     
@@ -106,6 +111,20 @@ export class Visualizer {
             if (this.isPlaying) {
                 this.virtualTime += deltaMs;
             }
+            
+            let hasActiveHits = false;
+            for (let i = 0; i < this.hits.length; i++) {
+                if ((this.virtualTime - this.hits[i].timestamp) / 1000.0 <= this.fadeSeconds) {
+                    hasActiveHits = true;
+                    break;
+                }
+            }
+
+            if (!this.isPlaying && !hasActiveHits && !this.needsRender) {
+                requestAnimationFrame(render);
+                return;
+            }
+            this.needsRender = false;
             
             // Clear buffer
             this.ctx.clearRect(0, 0, this.width, this.height);

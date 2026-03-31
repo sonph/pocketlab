@@ -18,6 +18,8 @@ export class Histogram {
         // Rendering constraints
         this.bucketCount = 80; // Total number of vertical bars rendering the curve
         this.peakBucketVolume = 10; // Auto-scales during render to prevent clipping
+        this.lastLocalPeak = 0;
+        this.needsRender = true;
         
         this.initResizeObserver();
         this.updateScaling();
@@ -33,6 +35,7 @@ export class Histogram {
                 this.canvas.width = this.width * window.devicePixelRatio;
                 this.canvas.height = this.height * window.devicePixelRatio;
                 this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+                this.needsRender = true;
             }
         });
         observer.observe(this.canvas.parentElement);
@@ -40,21 +43,26 @@ export class Histogram {
     
     addHit(offsetMs) {
         this.offsets.push(offsetMs);
+        this.needsRender = true;
     }
     
     clear() {
         this.offsets = [];
         this.peakBucketVolume = 10; // reset
+        this.lastLocalPeak = 0;
+        this.needsRender = true;
     }
 
     setMeasureMode(mode) {
         this.measureMode = mode;
         this.updateScaling();
+        this.needsRender = true;
     }
     
     setBpm(bpm) {
         this.bpm = bpm;
         this.updateScaling();
+        this.needsRender = true;
     }
     
     updateScaling() {
@@ -73,6 +81,12 @@ export class Histogram {
     startRenderLoop() {
         const render = () => {
             if (this.width === 0) return requestAnimationFrame(render);
+            
+            if (!this.needsRender && this.peakBucketVolume <= Math.max(this.lastLocalPeak, 10)) {
+                requestAnimationFrame(render);
+                return;
+            }
+            this.needsRender = false;
             
             // Clear buffer with solid dark background
             this.ctx.fillStyle = '#0f172a'; // Match global background
@@ -133,6 +147,7 @@ export class Histogram {
                 // Extremely slow decay if the user clears or data shifts unexpectedly
                 this.peakBucketVolume -= 0.1;
             }
+            this.lastLocalPeak = localPeak;
 
             // ----------------------------------------------------
             // 2. Render Histogram Bars

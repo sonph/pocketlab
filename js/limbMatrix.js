@@ -18,6 +18,7 @@ export class LimbMatrixVisualizer {
         this.virtualTime = 0;
         this.lastRenderRealTime = performance.now();
         this.isPlaying = false;
+        this.needsRender = true;
         
         this.initResizeObserver();
         this.updateScaling();
@@ -32,6 +33,7 @@ export class LimbMatrixVisualizer {
                 this.canvas.width = this.width * window.devicePixelRatio;
                 this.canvas.height = this.height * window.devicePixelRatio;
                 this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+                this.needsRender = true;
             }
         });
         observer.observe(this.canvas.parentElement);
@@ -40,6 +42,7 @@ export class LimbMatrixVisualizer {
     setBpm(bpm) {
         this.bpm = bpm;
         this.updateScaling();
+        this.needsRender = true;
     }
 
     updateScaling() {
@@ -51,6 +54,7 @@ export class LimbMatrixVisualizer {
     clear() {
         this.points = [];
         this.pendingWindows = {};
+        this.needsRender = true;
     }
 
     addHit(instrument, offsetMs, expectedTargetId, velocity, color, shape) {
@@ -75,6 +79,7 @@ export class LimbMatrixVisualizer {
         
         this.evaluateWindow(winId);
         this.purgeOldWindows();
+        this.needsRender = true;
     }
 
     evaluateWindow(winId) {
@@ -119,14 +124,31 @@ export class LimbMatrixVisualizer {
         const render = () => {
             if (this.width === 0) return requestAnimationFrame(render);
             
-            this.ctx.clearRect(0, 0, this.width, this.height);
-            
             const now = performance.now();
             if (this.isPlaying) {
                 const dt = (now - this.lastRenderRealTime) / 1000.0;
                 this.virtualTime += dt;
             }
             this.lastRenderRealTime = now;
+            
+            let hasActiveHits = false;
+            for (let i = 0; i < this.points.length; i++) {
+                let ageSecs = this.virtualTime - this.points[i].timestamp;
+                if (ageSecs < 0) ageSecs = 0;
+                let alpha = 1.0 - (ageSecs / this.fadeSeconds);
+                if (alpha > 0) {
+                    hasActiveHits = true;
+                    break;
+                }
+            }
+
+            if (!this.isPlaying && !hasActiveHits && !this.needsRender) {
+                requestAnimationFrame(render);
+                return;
+            }
+            this.needsRender = false;
+            
+            this.ctx.clearRect(0, 0, this.width, this.height);
 
             const cx = this.width / 2;
             const cy = this.height / 2;
