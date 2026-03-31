@@ -4,6 +4,7 @@ import { Visualizer } from './visualizer.js';
 import { Histogram } from './histogram.js';
 import { TimelineVisualizer } from './timeline.js';
 import { LimbMatrixVisualizer } from './limbMatrix.js';
+import { calculateTimingScore } from './scoring.js';
 
 /**
  * Pocket Lab Core Application
@@ -655,12 +656,8 @@ class PocketLabApp {
             const expectedPerf = expectedHitPerfTime(closestHit.time);
             const offsetMs = now - expectedPerf;
             
-            // Calculate Timing Score (Gaussian model from SPECS 6A)
-            const duration16thMs = (60000.0 / this.metronome.bpm) / 4.0;
-            const sigma = 0.15;
-            // e^(- (abs(dt) / (D_16th * sigma))^2 )
-            const errorRatio = Math.abs(offsetMs) / (duration16thMs * sigma);
-            const timingScore = 100.0 * Math.exp(-(errorRatio * errorRatio));
+            // Calculate Timing Score using our pure math utility
+            const timingScore = calculateTimingScore(offsetMs, this.metronome.bpm);
             
             // Pass the generated score inside the hitDetails so visualizers or other processors can use it
             hitDetails.timingScore = timingScore;

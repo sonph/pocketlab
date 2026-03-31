@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pocket Lab Test Suite</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #0f172a;
+            color: #e2e8f0;
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 { color: #38bdf8; border-bottom: 2px solid #334155; padding-bottom: 0.5rem; }
+        pre { background-color: #1e293b; padding: 1.5rem; border-radius: 8px; border: 1px solid #334155; font-size: 1rem; overflow-x: auto; white-space: pre-wrap; line-height: 1.5; }
+        #test-progress { font-weight: bold; font-size: 1.2rem; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <h1>Pocket Lab Core Test Suite</h1>
+    <p>Running isolated behavioral specs natively in the browser...</p>
+    
+    <pre id="test-output"></pre>
+    <div id="test-progress">Initializing tests...</div>
+
+    <!-- We load the module which executes the tests synchronously -->
+    <script type="module" src="scoring.test.js"></script>
+</body>
+</html>

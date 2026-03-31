@@ -105,3 +105,15 @@ For now, perform manual verification through the development server, ensuring yo
 - [x] Build out the dynamic collapsible Help System
 - [ ] Implement the Center Panel Visualization canvas container
 - [ ] Implement the Right Panel Session Statistics board
+
+## Local Development & Testing
+
+Since Pocket Lab operates entirely inside the browser without requiring a Node.js backend or bundlers (`npm`, `webpack`, `vite`), we run our internal logic tests directly within a controlled browser sandbox.
+
+### Running Unit Tests
+We have specifically isolated core mathematical formulas (such as the Timing Score engine) into pure utility modules (`js/scoring.js`) so they can be unit-tested seamlessly.
+
+To run the test suite:
+1. Boot up a local HTTP server in the root directory (e.g. `python -m http.server 8000` or the VS Code Live Server extension).
+2. Navigate to [`/test/test.html`](http://localhost:8000/test/test.html) in your browser.
+3. The page will immediately execute our behavioral test suite script (`test/scoring.test.js`) and spit out the pass/fail assertions for all complex mathematical models.
