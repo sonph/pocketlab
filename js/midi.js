@@ -131,10 +131,8 @@ export class MidiEngine {
                 // Determine if note already exists to prevent duplicate array entries
                 if (!this.mappings[this.liveMapTarget].noteIds.includes(note)) {
                     this.mappings[this.liveMapTarget].noteIds.push(note);
+                    if (this.onLiveMapComplete) this.onLiveMapComplete(this.liveMapTarget, this.mappings[this.liveMapTarget].noteIds);
                 }
-                const mappedId = this.liveMapTarget;
-                this.liveMapTarget = null;
-                if (this.onLiveMapComplete) this.onLiveMapComplete(mappedId, this.mappings[mappedId].noteIds);
                 return;
             }
 
@@ -164,7 +162,9 @@ export class MidiEngine {
     // --- State Handlers ---
 
     listenForMap(instrumentId) {
-        if (this.mappings[instrumentId]) {
+        if (this.liveMapTarget === instrumentId) {
+            this.liveMapTarget = null;
+        } else if (this.mappings[instrumentId]) {
             this.liveMapTarget = instrumentId;
         }
     }
