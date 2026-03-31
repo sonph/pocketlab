@@ -41,6 +41,24 @@ class PocketLabApp {
     }
 
     setupMetronomeUI() {
+        // Setup Local Config
+        // IMPORTANT: Ensure backward compatibility when modifying this object in the future by adding new keys but retaining expected value formats.
+        this.localConfig = {};
+        try {
+            const saved = localStorage.getItem('pocketlab_config');
+            if (saved) {
+                this.localConfig = JSON.parse(saved);
+            }
+        } catch (e) {
+            console.warn("Could not load local config", e);
+        }
+
+        const saveConfig = () => {
+            try {
+                localStorage.setItem('pocketlab_config', JSON.stringify(this.localConfig));
+            } catch (e) {}
+        };
+
         const playBtn = document.getElementById('play-btn');
         const bpmInput = document.getElementById('bpm-input');
         const bpmSlider = document.getElementById('bpm-slider');
@@ -75,7 +93,17 @@ class PocketLabApp {
             const winSel = document.getElementById('setting-timeline-window');
             const gridSel = document.getElementById('setting-timeline-grid');
             if (this.timeline) this.timeline.updateConfig(winSel ? winSel.value : 2, bpm, this.metronome.tsCount, gridSel ? gridSel.value : 4);
+            
+            if (this.localConfig) {
+                this.localConfig['bpm'] = bpm;
+                saveConfig();
+            }
         };
+
+        if (this.localConfig && this.localConfig['bpm'] !== undefined) {
+            // Apply instantly to override initial HTML values
+            updateBpm(this.localConfig['bpm']);
+        }
 
         if (bpmInput) {
             bpmInput.addEventListener('input', (e) => updateBpm(e.target.value));
@@ -97,10 +125,24 @@ class PocketLabApp {
         const bindSetting = (id, property, isNumber = false) => {
             const el = document.getElementById(id);
             if (!el) return;
+            
+            // Load and apply backward-compatible saved setting if it exists
+            if (this.localConfig && this.localConfig[property] !== undefined) {
+                if (el.type === 'checkbox') el.checked = this.localConfig[property];
+                else el.value = this.localConfig[property];
+                
+                this.metronome.updateSettings({ [property]: this.localConfig[property] });
+            }
+            
             const handler = (e) => {
                 let val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
                 if (isNumber) val = Number(val);
                 this.metronome.updateSettings({ [property]: val });
+                
+                if (this.localConfig) {
+                    this.localConfig[property] = val;
+                    saveConfig();
+                }
             };
             el.addEventListener('change', handler);
             el.addEventListener('input', handler); 
@@ -141,12 +183,21 @@ class PocketLabApp {
         ['setting-feedbackTrigger', 'setting-feedbackDifficulty'].forEach(id => {
             const el = document.getElementById(id);
             if (el) {
+                const prop = id === 'setting-feedbackTrigger' ? 'feedbackTriggerMode' : 'feedbackDifficultyMode';
+                
+                if (this.localConfig && this.localConfig[prop] !== undefined) {
+                    el.value = this.localConfig[prop];
+                }
+                
                 el.addEventListener('change', (e) => {
-                    const prop = id === 'setting-feedbackTrigger' ? 'feedbackTriggerMode' : 'feedbackDifficultyMode';
                     this[prop] = e.target.value;
                     this.consecutiveGoodFeedbackHits = 0;
+                    
+                    if (this.localConfig) {
+                        this.localConfig[prop] = e.target.value;
+                        saveConfig();
+                    }
                 });
-                const prop = id === 'setting-feedbackTrigger' ? 'feedbackTriggerMode' : 'feedbackDifficultyMode';
                 this[prop] = el.value;
             }
         });
