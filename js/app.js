@@ -260,6 +260,26 @@ class PocketLabApp {
                 }
             });
         }
+
+        const fVol = document.getElementById('setting-feedbackVolume');
+        const fVolVal = document.getElementById('feedbackVolume-val');
+        if (fVol) {
+            if (this.localConfig && this.localConfig.feedbackVolume !== undefined) {
+                const volPct = this.localConfig.feedbackVolume * 100;
+                fVol.value = volPct;
+                if (fVolVal) fVolVal.textContent = `${Math.round(volPct)}%`;
+                this.metronome.feedbackVolume = this.localConfig.feedbackVolume;
+            }
+            fVol.addEventListener('input', (e) => {
+                const vol = parseFloat(e.target.value) / 100.0;
+                this.metronome.feedbackVolume = vol;
+                if (fVolVal) fVolVal.textContent = `${e.target.value}%`;
+                if (this.localConfig) {
+                    this.localConfig.feedbackVolume = vol;
+                    this.saveConfig();
+                }
+            });
+        }
         
         ['main', '8th', '8thTrip', '16th', '16thTrip'].forEach(pat => {
             const chk = document.getElementById(`setting-pattern-${pat}`);

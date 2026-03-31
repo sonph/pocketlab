@@ -38,6 +38,7 @@ export class Metronome {
         this.gapConstantOn = 1;
         this.gapConstantOff = 1;
         this.gapChaos = 50;
+        this.feedbackVolume = 1.0;
         
         this.shakyEnabled = false;
         this.shakyRange = 10;
@@ -108,7 +109,7 @@ export class Metronome {
         source.buffer = this.feedbackBuffers[type];
         source.connect(envelope);
         envelope.connect(this.masterGainNode);
-        envelope.gain.value = volume;
+        envelope.gain.value = volume * this.feedbackVolume;
         source.start(0);
     }
 
