@@ -7,6 +7,8 @@ export class Metronome {
         this.bpm = 120;
         this.lookahead = 25.0; // ms
         this.scheduleAheadTime = 0.1; // sec
+        
+        this.bpmPulse = 4; // 4 for quarter, 8 for eighth
 
         // Advanced Settings
         this.intervalMode = 'endless'; // endless, 1min, 3min
@@ -160,18 +162,24 @@ export class Metronome {
         }
     }
 
+    getEffectiveQuarterBpm() {
+        return this.bpm * (4.0 / this.bpmPulse);
+    }
+
     rollRandomBars() {
         this.gapRandomBarOn = Math.floor(Math.random() * 4) + 1; // 1-4
         this.gapRandomBarOff = Math.floor(Math.random() * 2) + 1; // 1-2
     }
 
     nextNote() {
-        const secondsPerBeat = 60.0 / this.bpm;
+        const secondsPerBeat = 60.0 / this.getEffectiveQuarterBpm();
         // 12 internal micro-ticks per beat
         this.nextNoteTime += (1.0 / 12.0) * secondsPerBeat; 
 
-        // Ticks cycle up to limit dictated by Time Signature count
-        const ticksPerBar = this.tsCount * 12;
+        // Ticks cycle up to limit dictated by Time Signature count and subdivision
+        // 12 ticks = 1 quarter note.
+        const quartersPerBar = this.tsCount * (4.0 / this.tsSubdiv);
+        const ticksPerBar = quartersPerBar * 12;
 
         this.currentTick++; 
         if (this.currentTick >= ticksPerBar) {

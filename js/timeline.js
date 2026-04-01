@@ -11,6 +11,7 @@ export class TimelineVisualizer {
         this.windowBars = 2;
         this.bpm = 120;
         this.tsCount = 4;
+        this.tsSubdiv = 4;
         
         this.currentWindowIndex = -1;
         this.frozenPlayheadSecs = -1;
@@ -25,10 +26,11 @@ export class TimelineVisualizer {
         // Don't draw immediately if not initialized
     }
 
-    updateConfig(windowBars, bpm, tsCount, gridSubdivisions) {
+    updateConfig(windowBars, bpm, tsCount, tsSubdiv, gridSubdivisions) {
         this.windowBars = parseInt(windowBars) || 2;
         this.bpm = bpm || 120;
         this.tsCount = tsCount || 4;
+        this.tsSubdiv = tsSubdiv || 4;
         this.gridSubdivs = parseInt(gridSubdivisions) || 4;
         this.needsRender = true;
     }
@@ -36,10 +38,11 @@ export class TimelineVisualizer {
     addHit(instrument, velocity, color, shape, elapsedSecs) {
         if (!this.tracks.includes(instrument)) return;
         
-        const secondsPerBar = (60.0 / this.bpm) * this.tsCount;
-        const windowDuration = secondsPerBar * this.windowBars;
-        // Safety guard for negatives due to latency math
         if (elapsedSecs < 0) return;
+        
+        const quartersPerBar = this.tsCount * (4.0 / this.tsSubdiv);
+        const secondsPerBar = (60.0 / this.bpm) * quartersPerBar;
+        const windowDuration = secondsPerBar * this.windowBars;
         
         const windowIndex = Math.floor(elapsedSecs / windowDuration);
         const hitX = (elapsedSecs % windowDuration) / windowDuration; 
@@ -78,7 +81,8 @@ export class TimelineVisualizer {
         const renderSecs = isPlaying ? elapsedSecs : this.frozenPlayheadSecs;
         
         if (renderSecs >= 0) {
-            const secondsPerBar = (60.0 / this.bpm) * this.tsCount;
+            const quartersPerBar = this.tsCount * (4.0 / this.tsSubdiv);
+            const secondsPerBar = (60.0 / this.bpm) * quartersPerBar;
             const windowDuration = secondsPerBar * this.windowBars;
             halfBeatRatio = (30.0 / this.bpm) / windowDuration;
             fadeZoneRatio = halfBeatRatio * 5.0; // Starts fading 2.5 beats early
@@ -131,26 +135,45 @@ export class TimelineVisualizer {
 
         // Background Math Grids
         const validGridConfig = this.gridSubdivs || 4;
-        const totalSubdivs = this.windowBars * this.tsCount * validGridConfig;
-        const subdivsPerBar = this.tsCount * validGridConfig;
+        const quartersPerBar = this.tsCount * (4.0 / this.tsSubdiv);
+        const totalQuarters = this.windowBars * quartersPerBar;
         
-        for (let b = 0; b <= totalSubdivs; b++) {
-            const x = (b / totalSubdivs) * this.canvas.width;
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
+        for (let bar = 0; bar <= this.windowBars; bar++) {
+            const barOffsetQ = bar * quartersPerBar;
             
-            if (b % subdivsPerBar === 0) {
-                this.ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-                this.ctx.lineWidth = 2; // bolder bar separators
-            } else if (b % validGridConfig === 0) {
-                this.ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-                this.ctx.lineWidth = 1;
-            } else {
-                this.ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-                this.ctx.lineWidth = 1;
-            }
+            // Draw bar boundary
+            const barX = (barOffsetQ / totalQuarters) * this.canvas.width;
+            this.ctx.beginPath();
+            this.ctx.moveTo(barX, 0);
+            this.ctx.lineTo(barX, this.canvas.height);
+            this.ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+            this.ctx.lineWidth = 2;
             this.ctx.stroke();
+            
+            if (bar === this.windowBars) continue;
+            
+            // Draw internal grids for this bar
+            const numLinesOverBar = Math.floor(quartersPerBar * validGridConfig);
+            for (let b = 1; b <= numLinesOverBar; b++) {
+                const subQ = b / validGridConfig;
+                if (Math.abs(subQ - quartersPerBar) < 0.001) continue;
+                
+                const qPos = barOffsetQ + subQ;
+                const gridX = (qPos / totalQuarters) * this.canvas.width;
+                
+                this.ctx.beginPath();
+                this.ctx.moveTo(gridX, 0);
+                this.ctx.lineTo(gridX, this.canvas.height);
+                
+                if (b % validGridConfig === 0) {
+                    this.ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                    this.ctx.lineWidth = 1;
+                } else {
+                    this.ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+                    this.ctx.lineWidth = 1;
+                }
+                this.ctx.stroke();
+            }
         }
         this.ctx.lineWidth = 1; // reset after grid loop
 

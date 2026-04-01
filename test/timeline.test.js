@@ -1,4 +1,5 @@
 import { TimelineVisualizer } from '../js/timeline.js';
+import { runMetronomeTests } from './metronome.test.js';
 
 const output = document.getElementById('test-output');
 const progress = document.getElementById('test-progress');
@@ -68,10 +69,6 @@ export function runTimelineTests() {
     }
     
     output.innerHTML += `\n--------------------------\n`;
-    progress.innerHTML = `Tests Completed: ${passed}/${total} passed.`;
-    if (passed === total) {
-        progress.style.color = '#a3e635';
-    } else {
-        progress.style.color = '#f87171';
-    }
+    // Defer to Metronome test suite
+    runMetronomeTests();
 }

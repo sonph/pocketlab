@@ -117,12 +117,14 @@ class PocketLabApp {
             if (bpmInput) bpmInput.value = bpm;
             if (bpmSlider) bpmSlider.value = bpm;
             this.metronome.setBpm(bpm);
-            if (this.visualizer) this.visualizer.setBpm(bpm);
-            if (this.histogram) this.histogram.setBpm(bpm);
-            if (this.limbMatrix) this.limbMatrix.setBpm(bpm);
+            
+            const effectiveBpm = this.metronome.getEffectiveQuarterBpm();
+            if (this.visualizer) this.visualizer.setBpm(effectiveBpm);
+            if (this.histogram) this.histogram.setBpm(effectiveBpm);
+            if (this.limbMatrix) this.limbMatrix.setBpm(effectiveBpm);
             const winSel = document.getElementById('setting-timeline-window');
             const gridSel = document.getElementById('setting-timeline-grid');
-            if (this.timeline) this.timeline.updateConfig(winSel ? winSel.value : 2, bpm, this.metronome.tsCount, gridSel ? gridSel.value : 4);
+            if (this.timeline) this.timeline.updateConfig(winSel ? winSel.value : 2, effectiveBpm, this.metronome.tsCount, this.metronome.tsSubdiv, gridSel ? gridSel.value : 4);
             
             if (this.localConfig) {
                 this.localConfig['bpm'] = bpm;
@@ -213,6 +215,12 @@ class PocketLabApp {
         
         bindSetting('setting-ts-count', 'tsCount', true);
         bindSetting('setting-ts-subdiv', 'tsSubdiv', true);
+        bindSetting('bpm-pulse', 'bpmPulse', true);
+        if (document.getElementById('bpm-pulse')) {
+            document.getElementById('bpm-pulse').addEventListener('change', () => {
+                updateBpm(this.metronome.bpm); // cascade effectively
+            });
+        }
         
         ['setting-feedbackTrigger', 'setting-feedbackDifficulty'].forEach(id => {
             const el = document.getElementById(id);
@@ -250,8 +258,9 @@ class PocketLabApp {
             if (this.timeline) {
                 this.timeline.updateConfig(
                     winSel ? winSel.value : 2, 
-                    this.metronome.bpm, 
+                    this.metronome.getEffectiveQuarterBpm(), 
                     this.metronome.tsCount,
+                    this.metronome.tsSubdiv,
                     gridSel ? gridSel.value : 4
                 );
             }
@@ -1149,7 +1158,7 @@ class PocketLabApp {
         this.histogram.setDifficultyMode(this.feedbackDifficultyMode);
         const winSel = document.getElementById('setting-timeline-window');
         const gridSel = document.getElementById('setting-timeline-grid');
-        this.timeline.updateConfig(winSel ? winSel.value : 2, this.metronome.bpm, this.metronome.tsCount, gridSel ? gridSel.value : 4);
+        this.timeline.updateConfig(winSel ? winSel.value : 2, this.metronome.getEffectiveQuarterBpm(), this.metronome.tsCount, this.metronome.tsSubdiv, gridSel ? gridSel.value : 4);
         
         this.velocityHistogram = new VelocityHistogram('velocity-histogram-canvas');
 
