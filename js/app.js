@@ -4,7 +4,7 @@ import { Visualizer } from './visualizer.js';
 import { Histogram } from './histogram.js';
 import { TimelineVisualizer } from './timeline.js';
 import { LimbMatrixVisualizer } from './limbMatrix.js';
-import { calculateTimingScore } from './scoring.js';
+import { calculateTimingScore, selectFlamCandidate } from './scoring.js';
 
 /**
  * Pocket Lab Core Application
@@ -27,6 +27,7 @@ class PocketLabApp {
         this.midiSyncEnabled = false;
         this.muteOnSyncEnabled = false;
         this.sessionHitHistory = []; // Local history of scores for sliding average calculation
+        this.pendingSnareHit = null; // Buffer for flam detection: { targetTime, offsetMs, velocity }
         this.scoreDisplay = document.getElementById('score-display');
         this.init();
     }
@@ -863,41 +864,42 @@ class PocketLabApp {
             }
 
             if (isEvaluatingFeedback) {
-                // Prevent evaluating double hits on the same target
-                if (closestHit.time !== this.lastEvaluatedFeedbackTarget) {
-                    this.lastEvaluatedFeedbackTarget = closestHit.time;
-                    
-                    const offsetSecs = offsetMs / 1000.0;
-                    const thirtySecondSecs = (60.0 / this.metronome.bpm) / 8.0;
-                    
-                    let diffFactor = 0.5;
-                    if (this.feedbackDifficultyMode === 'easy') diffFactor = 0.8;
-                    else if (this.feedbackDifficultyMode === 'hard') diffFactor = 0.2;
-                    
-                    if (Math.abs(offsetSecs) <= thirtySecondSecs) {
-                        const absOffset = Math.abs(offsetSecs);
-                        if (absOffset <= thirtySecondSecs * diffFactor) {
-                            this.consecutiveGoodFeedbackHits++;
-                            
-                            if (this.consecutiveGoodFeedbackHits <= 2) {
-                                this.metronome.playFeedback('good');
-                            } else if (this.consecutiveGoodFeedbackHits === 3) {
-                                this.metronome.playFeedback('great');
-                            } else if (this.consecutiveGoodFeedbackHits >= 4) {
-                                this.metronome.playFeedback('perfect');
-                            }
-                        } else {
-                            this.consecutiveGoodFeedbackHits = 0;
-                            if (offsetSecs < 0) {
-                                this.metronome.playFeedback('toofast');
-                            } else {
-                                this.metronome.playFeedback('tooslow');
-                            }
+                if (hitDetails.instrument === 'snare') {
+                    // Flam detection: buffer snare hits and keep the loudest one per target
+                    if (!this.pendingSnareHit || this.pendingSnareHit.targetTime !== closestHit.time) {
+                        // Flush any previous pending snare against a different target
+                        if (this.pendingSnareHit) {
+                            this._evaluateFeedbackTiming(this.pendingSnareHit.offsetMs);
                         }
+                        // Start a new buffer for this target
+                        this.pendingSnareHit = { targetTime: closestHit.time, offsetMs, velocity: hitDetails.velocity };
                     } else {
-                        // Missed window entirely, break streak silently
-                        this.consecutiveGoodFeedbackHits = 0;
+                        // Same target — use selectFlamCandidate to pick the louder hit
+                        const winner = selectFlamCandidate([
+                            this.pendingSnareHit,
+                            { offsetMs, velocity: hitDetails.velocity }
+                        ]);
+                        this.pendingSnareHit.offsetMs = winner.offsetMs;
+                        this.pendingSnareHit.velocity = winner.velocity;
+                        // Do NOT evaluate yet; wait to see if another hit still comes in
                     }
+                } else {
+                    // Non-snare instrument: flush any pending snare first, then evaluate this hit
+                    if (this.pendingSnareHit) {
+                        this._evaluateFeedbackTiming(this.pendingSnareHit.offsetMs);
+                        this.pendingSnareHit = null;
+                    }
+                    if (closestHit.time !== this.lastEvaluatedFeedbackTarget) {
+                        this.lastEvaluatedFeedbackTarget = closestHit.time;
+                        this._evaluateFeedbackTiming(offsetMs);
+                    }
+                }
+            } else if (this.pendingSnareHit) {
+                // Non-snare, non-feedback hit — flush pending snare if we've moved past its window
+                const pendingPerf = expectedHitPerfTime(this.pendingSnareHit.targetTime);
+                if (Math.abs(performance.now() - pendingPerf) > 300) {
+                    this._evaluateFeedbackTiming(this.pendingSnareHit.offsetMs);
+                    this.pendingSnareHit = null;
                 }
             }
             
@@ -1004,6 +1006,39 @@ class PocketLabApp {
                 document.dispatchEvent(ev);
             }
         };
+    }
+
+    _evaluateFeedbackTiming(offsetMs) {
+        const offsetSecs = offsetMs / 1000.0;
+        const thirtySecondSecs = (60.0 / this.metronome.bpm) / 8.0;
+
+        let diffFactor = 0.5;
+        if (this.feedbackDifficultyMode === 'easy') diffFactor = 0.8;
+        else if (this.feedbackDifficultyMode === 'hard') diffFactor = 0.2;
+
+        if (Math.abs(offsetSecs) <= thirtySecondSecs) {
+            const absOffset = Math.abs(offsetSecs);
+            if (absOffset <= thirtySecondSecs * diffFactor) {
+                this.consecutiveGoodFeedbackHits++;
+                if (this.consecutiveGoodFeedbackHits <= 2) {
+                    this.metronome.playFeedback('good');
+                } else if (this.consecutiveGoodFeedbackHits === 3) {
+                    this.metronome.playFeedback('great');
+                } else if (this.consecutiveGoodFeedbackHits >= 4) {
+                    this.metronome.playFeedback('perfect');
+                }
+            } else {
+                this.consecutiveGoodFeedbackHits = 0;
+                if (offsetSecs < 0) {
+                    this.metronome.playFeedback('toofast');
+                } else {
+                    this.metronome.playFeedback('tooslow');
+                }
+            }
+        } else {
+            // Missed window entirely, break streak silently
+            this.consecutiveGoodFeedbackHits = 0;
+        }
     }
 
     renderMappingTable() {

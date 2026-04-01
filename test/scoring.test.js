@@ -1,4 +1,4 @@
-import { calculateTimingScore, calculateBpmFromDeltas } from '../js/scoring.js';
+import { calculateTimingScore, calculateBpmFromDeltas, selectFlamCandidate } from '../js/scoring.js';
 import { runTimelineTests } from './timeline.test.js';
 
 const output = document.getElementById('test-output');
@@ -14,6 +14,17 @@ function assertEqual(name, actual, expected, tolerance = 0.01) {
         passed++;
     } else {
         output.innerHTML += `❌ <span style="color: #f87171;">[FAIL]</span> ${name} | Expected: ${expected.toFixed(2)}, Got: ${actual.toFixed(2)}\n`;
+    }
+}
+
+function assertStrictEqual(name, actual, expected) {
+    total++;
+    const ok = JSON.stringify(actual) === JSON.stringify(expected);
+    if (ok) {
+        output.innerHTML += `✅ <span style="color: #4ade80;">[PASS]</span> ${name}\n`;
+        passed++;
+    } else {
+        output.innerHTML += `❌ <span style="color: #f87171;">[FAIL]</span> ${name} | Expected: ${JSON.stringify(expected)}, Got: ${JSON.stringify(actual)}\n`;
     }
 }
 
@@ -67,6 +78,50 @@ try {
     assertClose(calculateBpmFromDeltas(dirtyTicks), 120.0, 0.1, 'BPM strictly ignores invalid jitter boundaries');
 
     assertClose(calculateBpmFromDeltas([]), 0, 0, 'Should return 0 for safe fallback');
+
+    output.innerHTML += `\n--------------------------\n`;
+    output.innerHTML += `Running Flam Selection tests...\n`;
+
+    // Single hit - should just return it
+    assertStrictEqual(
+        'Single candidate returns itself',
+        selectFlamCandidate([{ offsetMs: 10, velocity: 80 }]),
+        { offsetMs: 10, velocity: 80 }
+    );
+
+    // Flam: second hit is louder (main stroke) - should be selected
+    assertStrictEqual(
+        'Selects louder hit (main stroke) from a flam',
+        selectFlamCandidate([
+            { offsetMs: -15, velocity: 40 },  // grace note
+            { offsetMs:   5, velocity: 110 }, // main stroke
+        ]),
+        { offsetMs: 5, velocity: 110 }
+    );
+
+    // Flam: first hit is louder - should be selected
+    assertStrictEqual(
+        'Selects louder hit when grace note comes after main stroke',
+        selectFlamCandidate([
+            { offsetMs: -5, velocity: 115 },  // main stroke first
+            { offsetMs: 18, velocity: 38 },   // grace note second
+        ]),
+        { offsetMs: -5, velocity: 115 }
+    );
+
+    // Equal velocities: first candidate wins (stable)
+    assertStrictEqual(
+        'Tie in velocity returns first candidate (stable behaviour)',
+        selectFlamCandidate([
+            { offsetMs: -5, velocity: 80 },
+            { offsetMs:  3, velocity: 80 },
+        ]),
+        { offsetMs: -5, velocity: 80 }
+    );
+
+    // Empty array returns null
+    assertStrictEqual('Empty candidates returns null', selectFlamCandidate([]), null);
+    assertStrictEqual('Null input returns null', selectFlamCandidate(null), null);
 
     output.innerHTML += `\n--------------------------\n`;
     progress.innerHTML = `Tests Completed: ${passed}/${total} passed.`;
