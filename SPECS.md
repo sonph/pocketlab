@@ -222,3 +222,5 @@ Make sure the app is performant and responsive.
 4. Always update README after significant changes.
 
 5. Always update SPECS after additional requirements are added in the chats to keep it as a single source of truth for the project which will be used as a reference for future development.
+
+6. System State Persistence: All user configurable settings (volumes, thresholds, mappings, UI toggles, frequencies, and parameters) MUST automatically be persisted to the browser's `localStorage` and gracefully loaded upon application startup to ensure a frictionless user experience.

@@ -435,14 +435,22 @@
                         </select>
                     </div>
 
-                    <div style="display: flex; align-items: center; justify-content: space-between;">
-                        <span data-help="Adjust the volume of the evaluation sound effects (good, great, perfect) independently of the click.">Feedback Volume:</span>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <input type="range" id="setting-feedbackVolume" min="0" max="200" value="100" style="width: 80px;">
-                            <span id="feedbackVolume-val" style="font-size: 0.8rem; width: 35px; text-align: right;">100%</span>
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span data-help="Adjust the volume of the evaluation sound effects (good, great, perfect) independently of the click.">Feedback Volume:</span>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="range" id="setting-feedbackVolume" min="0" max="200" value="100" style="width: 80px;">
+                                <span id="feedbackVolume-val" style="font-size: 0.8rem; width: 35px; text-align: right;">100%</span>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span data-help="Adjust the pitch/frequency (Hz) of the standard electronic metronome beep sound.">Metronome Beep Pitch:</span>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="range" id="setting-beepFrequency" min="400" max="2000" value="1000" step="10" style="width: 80px;">
+                                <span id="beepFrequency-val" class="numeric-data" style="font-size: 0.8rem; width: 45px; text-align: right;">1000Hz</span>
+                            </div>
                         </div>
                     </div>
-                </div>
             </div>
 
             <div style="margin-bottom: 2rem;"

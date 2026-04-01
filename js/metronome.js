@@ -17,6 +17,8 @@ export class Metronome {
         this.tsCount = 4;
         this.tsSubdiv = 4;
         this.masterVolume = 1.0;
+        this.beepFrequency = 1000.0; // Configurable base frequency
+        
         
         this.patterns = {
             'main': true,
@@ -364,7 +366,7 @@ export class Metronome {
             osc.connect(envelope);
             envelope.connect(this.masterGainNode);
 
-            osc.frequency.value = isDownbeat ? 1200.0 : 800.0; 
+            osc.frequency.value = isDownbeat ? (this.beepFrequency * 1.5) : this.beepFrequency; 
 
             envelope.gain.setValueAtTime(0, time);
             envelope.gain.linearRampToValueAtTime(volume, time + 0.001);

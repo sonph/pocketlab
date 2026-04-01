@@ -287,6 +287,25 @@ class PocketLabApp {
             });
         }
         
+        const beepFreq = document.getElementById('setting-beepFrequency');
+        const beepFreqVal = document.getElementById('beepFrequency-val');
+        if (beepFreq) {
+            if (this.localConfig && this.localConfig.beepFrequency !== undefined) {
+                beepFreq.value = this.localConfig.beepFrequency;
+                if (beepFreqVal) beepFreqVal.textContent = `${this.localConfig.beepFrequency}Hz`;
+                this.metronome.beepFrequency = this.localConfig.beepFrequency;
+            }
+            beepFreq.addEventListener('input', (e) => {
+                const freq = parseFloat(e.target.value);
+                this.metronome.beepFrequency = freq;
+                if (beepFreqVal) beepFreqVal.textContent = `${freq}Hz`;
+                if (this.localConfig) {
+                    this.localConfig.beepFrequency = freq;
+                    this.saveConfig();
+                }
+            });
+        }
+        
         ['main', '8th', '8thTrip', '16th', '16thTrip'].forEach(pat => {
             const chk = document.getElementById(`setting-pattern-${pat}`);
             const slider = document.getElementById(`vol-pattern-${pat}`);
