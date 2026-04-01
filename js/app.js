@@ -5,6 +5,7 @@ import { Histogram } from './histogram.js';
 import { TimelineVisualizer } from './timeline.js';
 import { LimbMatrixVisualizer } from './limbMatrix.js';
 import { calculateTimingScore, selectFlamCandidate } from './scoring.js';
+import { VelocityHistogram } from './velocityHistogram.js';
 
 /**
  * Pocket Lab Core Application
@@ -19,6 +20,7 @@ class PocketLabApp {
         this.histogram = null;
         this.timeline = null;
         this.limbMatrix = null;
+        this.velocityHistogram = null;
         this.expectedHits = []; // Queue of structural times the user *should* hit
         this.consecutiveGoodFeedbackHits = 0;
         this.lastEvaluatedFeedbackTarget = -1;
@@ -851,6 +853,14 @@ class PocketLabApp {
                 );
             }
 
+            // Velocity Histogram routing
+            if (this.velocityHistogram && this.metronome.isPlaying && !this.metronome.isCountInPhase) {
+                const id = hitDetails.instrument;
+                if (['kick', 'snare', 'hihat'].includes(id)) {
+                    this.velocityHistogram.addHit(id, hitDetails.velocity);
+                }
+            }
+
             // Audio Feedback Engine Logic
             let isEvaluatingFeedback = false;
             
@@ -1148,7 +1158,53 @@ class PocketLabApp {
         const gridSel = document.getElementById('setting-timeline-grid');
         this.timeline.updateConfig(winSel ? winSel.value : 2, this.metronome.bpm, this.metronome.tsCount, gridSel ? gridSel.value : 4);
         
+        this.velocityHistogram = new VelocityHistogram('velocity-histogram-canvas');
+
+        // Register instruments using colors from MIDI mappings
+        const registerVelInstruments = () => {
+            const ghostThreshold = parseInt(document.getElementById('hw-ghost-threshold')?.value || '0', 10);
+            this.velocityHistogram.setRange(ghostThreshold, 127);
+            ['kick', 'snare', 'hihat'].forEach(id => {
+                const cfg = this.midi.mappings[id];
+                if (cfg) this.velocityHistogram.registerInstrument(id, cfg.color, cfg.name);
+            });
+        };
+        registerVelInstruments();
+
         console.log("Canvas mapping established.");
+
+        // Sync velocity histogram visibility checkboxes
+        const velHistContainer = document.getElementById('velocity-histogram-container');
+        const velInstruments = ['snare', 'hihat', 'kick'];
+        const updateVelHistVisibility = () => {
+            const anyEnabled = velInstruments.some(id => {
+                const chk = document.getElementById(`velHist-${id}`);
+                return chk && chk.checked;
+            });
+            if (velHistContainer) velHistContainer.style.display = anyEnabled ? 'block' : 'none';
+        };
+
+        velInstruments.forEach(id => {
+            const chk = document.getElementById(`velHist-${id}`);
+            if (!chk) return;
+
+            // Restore persisted state
+            const key = `velHist_${id}`;
+            if (this.localConfig && this.localConfig[key] !== undefined) {
+                chk.checked = this.localConfig[key];
+                this.velocityHistogram.setInstrumentEnabled(id, chk.checked);
+            }
+
+            chk.addEventListener('change', () => {
+                this.velocityHistogram.setInstrumentEnabled(id, chk.checked);
+                if (this.localConfig) {
+                    this.localConfig[`velHist_${id}`] = chk.checked;
+                    this.saveConfig();
+                }
+                updateVelHistVisibility();
+            });
+        });
+        updateVelHistVisibility();
 
         // Tap into the metronome loop to populate expectations
         const baseOnNoteScheduled = this.metronome.onNoteScheduled;

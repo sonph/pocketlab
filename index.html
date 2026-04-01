@@ -280,6 +280,13 @@
                     <canvas id="matrix-canvas"
                         style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
                 </div>
+
+                <!-- Velocity Histogram (below matrix, optional) -->
+                <div id="velocity-histogram-container" style="flex: 3; position: relative; border-top: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); display: none;">
+                    <label data-help="Velocity Distribution. Shows how consistently you are hitting each instrument. A tightly clustered cluster means consistent dynamics."></label>
+                    <canvas id="velocity-histogram-canvas"
+                        style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
+                </div>
             </div>
         </div>
 
@@ -475,6 +482,27 @@
                             </div>
                         </div>
                     </div>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <label
+                    style="display: block; font-weight: bold; margin-bottom: 0.5rem; color: var(--color-primary-accent); font-size: 1.1rem;">Velocity
+                    Distribution Graph</label>
+                <div
+                    style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px;">
+                    <p style="font-size: 0.85rem; color: #94a3b8; font-style: italic; margin: 0;">Show the velocity histogram panel below the Limb Sync Matrix. Select which instruments to include on the graph.</p>
+                    <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.25rem;">
+                        <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                            <input type="checkbox" id="velHist-snare" checked style="transform: scale(1.2);"> Snare
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                            <input type="checkbox" id="velHist-hihat" checked style="transform: scale(1.2);"> Hi-Hat
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                            <input type="checkbox" id="velHist-kick" checked style="transform: scale(1.2);"> Kick
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <div style="margin-bottom: 2rem;"
