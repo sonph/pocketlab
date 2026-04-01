@@ -237,46 +237,59 @@ export class Visualizer {
     }
     
     drawShape(x, y, shape, color, opacity) {
+        if (!this.shapeCache) this.shapeCache = {};
+        const cacheKey = shape + '_' + color;
+        if (!this.shapeCache[cacheKey]) {
+            const c = document.createElement('canvas');
+            c.width = 40; c.height = 40;
+            const cctx = c.getContext('2d');
+            const center = 20;
+            const size = 12;
+            
+            cctx.translate(center, center);
+            cctx.fillStyle = color;
+            
+            cctx.beginPath();
+            switch(shape) {
+                case 'circle': cctx.arc(0, 0, size/2, 0, Math.PI * 2); break;
+                case 'square': cctx.rect(-size/2, -size/2, size, size); break;
+                case 'triangle':
+                    cctx.moveTo(0, -size/1.5);
+                    cctx.lineTo(size/1.5, size/1.5);
+                    cctx.lineTo(-size/1.5, size/1.5);
+                    cctx.closePath();
+                    break;
+                case 'diamond':
+                    cctx.moveTo(0, -size/1.2);
+                    cctx.lineTo(size/1.2, 0);
+                    cctx.lineTo(0, size/1.2);
+                    cctx.lineTo(-size/1.2, 0);
+                    cctx.closePath();
+                    break;
+                default: cctx.arc(0, 0, size/2, 0, Math.PI * 2);
+            }
+            cctx.fill();
+            
+            if (shape !== 'circle') {
+                cctx.lineJoin = 'round';
+                cctx.strokeStyle = color;
+                cctx.lineWidth = 4.5;
+                cctx.stroke();
+            }
+            
+            // Add a slight stroke/glow 
+            cctx.lineJoin = 'round';
+            cctx.strokeStyle = 'rgba(255,255,255,0.4)';
+            cctx.lineWidth = 1;
+            cctx.stroke();
+
+            this.shapeCache[cacheKey] = c;
+        }
+
         this.ctx.save();
         this.ctx.globalAlpha = opacity;
-        
-        // We parse standard colors to inject opacity, assuming hex or rgb
-        this.ctx.fillStyle = color;
         this.ctx.translate(x, y);
-        
-        const size = 12;
-        
-        this.ctx.beginPath();
-        switch(shape) {
-            case 'circle':
-                this.ctx.arc(0, 0, size/2, 0, Math.PI * 2);
-                break;
-            case 'square':
-                this.ctx.rect(-size/2, -size/2, size, size);
-                break;
-            case 'triangle':
-                this.ctx.moveTo(0, -size/1.5);
-                this.ctx.lineTo(size/1.5, size/1.5);
-                this.ctx.lineTo(-size/1.5, size/1.5);
-                this.ctx.closePath();
-                break;
-            case 'diamond':
-                this.ctx.moveTo(0, -size/1.2);
-                this.ctx.lineTo(size/1.2, 0);
-                this.ctx.lineTo(0, size/1.2);
-                this.ctx.lineTo(-size/1.2, 0);
-                this.ctx.closePath();
-                break;
-            default:
-                this.ctx.arc(0, 0, size/2, 0, Math.PI * 2);
-        }
-        this.ctx.fill();
-        
-        // Add a slight stroke/glow 
-        this.ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-        this.ctx.lineWidth = 1;
-        this.ctx.stroke();
-        
+        this.ctx.drawImage(this.shapeCache[cacheKey], -20, -20);
         this.ctx.restore();
     }
 }

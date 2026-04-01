@@ -183,28 +183,50 @@ export class TimelineVisualizer {
             this.ctx.globalAlpha = alpha;
             const size = 9; // Increased by 50% from 6
             
-            const drawHitShape = (drawX) => {
-                this.ctx.beginPath();
+            if (!this.shapeCache) this.shapeCache = {};
+            const cacheKey = hit.shape + '_' + hit.color;
+            if (!this.shapeCache[cacheKey]) {
+                const c = document.createElement('canvas');
+                c.width = 30; c.height = 30;
+                const cctx = c.getContext('2d');
+                const center = 15;
+                const s = 9;
+                cctx.fillStyle = hit.color;
+                cctx.strokeStyle = hit.color;
+                cctx.lineJoin = 'round';
+                cctx.lineWidth = 4.5;
+                cctx.beginPath();
                 if (hit.shape === 'circle') {
-                    this.ctx.arc(drawX, y, size, 0, Math.PI * 2);
-                    this.ctx.fill();
+                    cctx.arc(center, center, s, 0, Math.PI * 2);
+                    cctx.fill();
                 } else if (hit.shape === 'square') {
-                    this.ctx.fillRect(drawX - size, y - size, size * 2, size * 2);
+                    cctx.rect(center - s, center - s, s * 2, s * 2);
+                    cctx.fill();
+                    cctx.stroke();
                 } else if (hit.shape === 'triangle') {
-                    this.ctx.moveTo(drawX, y - size);
-                    this.ctx.lineTo(drawX + size, y + size);
-                    this.ctx.lineTo(drawX - size, y + size);
-                    this.ctx.fill();
+                    cctx.moveTo(center, center - s);
+                    cctx.lineTo(center + s, center + s);
+                    cctx.lineTo(center - s, center + s);
+                    cctx.closePath();
+                    cctx.fill();
+                    cctx.stroke();
                 } else if (hit.shape === 'diamond') {
-                    this.ctx.moveTo(drawX, y - size);
-                    this.ctx.lineTo(drawX + size, y);
-                    this.ctx.lineTo(drawX, y + size);
-                    this.ctx.lineTo(drawX - size, y);
-                    this.ctx.fill();
+                    cctx.moveTo(center, center - s);
+                    cctx.lineTo(center + s, center);
+                    cctx.lineTo(center, center + s);
+                    cctx.lineTo(center - s, center);
+                    cctx.closePath();
+                    cctx.fill();
+                    cctx.stroke();
                 } else {
-                    this.ctx.arc(drawX, y, size, 0, Math.PI * 2);
-                    this.ctx.fill();
+                    cctx.arc(center, center, s, 0, Math.PI * 2);
+                    cctx.fill();
                 }
+                this.shapeCache[cacheKey] = c;
+            }
+            
+            const drawHitShape = (drawX) => {
+                this.ctx.drawImage(this.shapeCache[cacheKey], drawX - 15, y - 15);
             };
             
             // Primary render

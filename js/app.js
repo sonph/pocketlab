@@ -1223,12 +1223,12 @@ class PocketLabApp {
     setupDebugSimulator() {
         // Pre-configure realistic pad mapping values
         this.midi.mappings = {
-            'kick': { name: 'Kick', noteIds: [36], color: '#3b82f6', shape: 'circle' },
-            'snare': { name: 'Snare', noteIds: [38], color: '#ef4444', shape: 'square' },
-            'hihat': { name: 'Hi-Hat', noteIds: [42], color: '#eab308', shape: 'triangle' },
-            'tom1': { name: 'Tom 1', noteIds: [48], color: '#10b981', shape: 'circle' },
-            'tom2': { name: 'Tom 2', noteIds: [45], color: '#8b5cf6', shape: 'circle' },
-            'ride': { name: 'Ride', noteIds: [51], color: '#14b8a6', shape: 'diamond' }
+            'kick': { name: 'Kick', noteIds: [36], color: '#10B981', shape: 'circle' },
+            'snare': { name: 'Snare', noteIds: [38], color: '#F59E0B', shape: 'square' },
+            'hihat': { name: 'Hi-Hat', noteIds: [42], color: '#38BDF8', shape: 'triangle' },
+            'tom1': { name: 'Tom 1', noteIds: [48], color: '#EF4444', shape: 'circle' },
+            'tom2': { name: 'Tom 2', noteIds: [45], color: '#14B8A6', shape: 'circle' },
+            'ride': { name: 'Ride', noteIds: [51], color: '#8B5CF6', shape: 'diamond' }
         };
         this.renderMappingTable();
 

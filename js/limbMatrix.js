@@ -213,27 +213,48 @@ export class LimbMatrixVisualizer {
                 this.ctx.globalAlpha = alpha;
                 
                 const size = 6;
-                this.ctx.beginPath();
-                if (p.shape === 'circle') {
-                    this.ctx.arc(mappedX, mappedY, size, 0, Math.PI * 2);
-                    this.ctx.fill();
-                } else if (p.shape === 'square') {
-                    this.ctx.fillRect(mappedX - size, mappedY - size, size * 2, size * 2);
-                } else if (p.shape === 'triangle') {
-                    this.ctx.moveTo(mappedX, mappedY - size);
-                    this.ctx.lineTo(mappedX + size, mappedY + size);
-                    this.ctx.lineTo(mappedX - size, mappedY + size);
-                    this.ctx.fill();
-                } else if (p.shape === 'diamond') {
-                    this.ctx.moveTo(mappedX, mappedY - size);
-                    this.ctx.lineTo(mappedX + size, mappedY);
-                    this.ctx.lineTo(mappedX, mappedY + size);
-                    this.ctx.lineTo(mappedX - size, mappedY);
-                    this.ctx.fill();
-                } else {
-                    this.ctx.arc(mappedX, mappedY, size, 0, Math.PI * 2);
-                    this.ctx.fill();
+                if (!this.shapeCache) this.shapeCache = {};
+                const cacheKey = p.shape + '_' + p.color;
+                if (!this.shapeCache[cacheKey]) {
+                    const c = document.createElement('canvas');
+                    c.width = 24; c.height = 24;
+                    const cctx = c.getContext('2d');
+                    const center = 12;
+                    const s = 6;
+                    cctx.fillStyle = p.color;
+                    cctx.strokeStyle = p.color;
+                    cctx.lineJoin = 'round';
+                    cctx.lineWidth = 4.5;
+                    cctx.beginPath();
+                    if (p.shape === 'circle') {
+                        cctx.arc(center, center, s, 0, Math.PI * 2);
+                        cctx.fill();
+                    } else if (p.shape === 'square') {
+                        cctx.rect(center - s, center - s, s * 2, s * 2);
+                        cctx.fill();
+                        cctx.stroke();
+                    } else if (p.shape === 'triangle') {
+                        cctx.moveTo(center, center - s);
+                        cctx.lineTo(center + s, center + s);
+                        cctx.lineTo(center - s, center + s);
+                        cctx.closePath();
+                        cctx.fill();
+                        cctx.stroke();
+                    } else if (p.shape === 'diamond') {
+                        cctx.moveTo(center, center - s);
+                        cctx.lineTo(center + s, center);
+                        cctx.lineTo(center, center + s);
+                        cctx.lineTo(center - s, center);
+                        cctx.closePath();
+                        cctx.fill();
+                        cctx.stroke();
+                    } else {
+                        cctx.arc(center, center, s, 0, Math.PI * 2);
+                        cctx.fill();
+                    }
+                    this.shapeCache[cacheKey] = c;
                 }
+                this.ctx.drawImage(this.shapeCache[cacheKey], mappedX - 12, mappedY - 12);
                 this.ctx.globalAlpha = 1.0;
             }
             
