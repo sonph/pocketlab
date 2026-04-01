@@ -20,3 +20,25 @@ export function calculateTimingScore(offsetMs, bpm, sigma = 0.15) {
     const errorRatio = Math.abs(offsetMs) / (duration16thMs * sigma);
     return 100.0 * Math.exp(-(errorRatio * errorRatio));
 }
+
+/**
+ * Calculates a stable BPM value given an array of millisecond deltas between consecutive MIDI clock ticks.
+ * A standard MIDI Clock outputs 24 ticks per quarter note.
+ * 
+ * @param {number[]} deltasMs - Array of millisecond durations between raw 0xF8 ticks.
+ * @returns {number} The calculated Beats Per Minute, or 0 if invalid input is provided.
+ */
+export function calculateBpmFromDeltas(deltasMs) {
+    if (!deltasMs || deltasMs.length === 0) return 0;
+    
+    // Safety check for impossible negative times or heavy outliers
+    const validDeltas = deltasMs.filter(d => d > 0 && d < 1000);
+    if (validDeltas.length === 0) return 0;
+
+    const sum = validDeltas.reduce((a, b) => a + b, 0);
+    const avgDelta = sum / validDeltas.length;
+
+    // formula: 1 beat = 24 ticks * avgDelta ms
+    // So BPM = 60000ms / (avgDelta * 24)
+    return 60000.0 / (avgDelta * 24);
+}

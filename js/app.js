@@ -24,6 +24,8 @@ class PocketLabApp {
         this.lastEvaluatedFeedbackTarget = -1;
         this.feedbackTriggerMode = 'snare';
         this.feedbackDifficultyMode = 'medium';
+        this.midiSyncEnabled = false;
+        this.muteOnSyncEnabled = false;
         this.sessionHitHistory = []; // Local history of scores for sliding average calculation
         this.scoreDisplay = document.getElementById('score-display');
         this.init();
@@ -74,8 +76,15 @@ class PocketLabApp {
                 
                 if (this.metronome.isPlaying) {
                     playBtn.classList.add('is-live');
+                    // Dynamic Mute application based on config state when starting
+                    if (this.midiSyncEnabled && this.muteOnSyncEnabled && this.midi.activeSyncSession) {
+                        this.metronome.setPlaybackMute(true);
+                    } else {
+                        this.metronome.setPlaybackMute(false);
+                    }
                 } else {
                     playBtn.classList.remove('is-live');
+                    this.metronome.setPlaybackMute(false); // Restore unmuted status on stop
                 }
                 
                 if (this.metronome.isPlaying) {
@@ -137,6 +146,10 @@ class PocketLabApp {
                 const step = parseInt(e.target.dataset.step, 10);
                 updateBpm(this.metronome.bpm + step);
             });
+        });
+        
+        document.addEventListener('force-bpm', (e) => {
+            if (e.detail) updateBpm(e.detail);
         });
 
         // Advanced Config UI Bindings
@@ -658,6 +671,36 @@ class PocketLabApp {
                 this.renderMappingTable();
             });
         }
+        
+        const midiSyncChk = document.getElementById('setting-midiSync');
+        if (midiSyncChk) {
+            if (this.localConfig && this.localConfig.midiSync !== undefined) {
+                midiSyncChk.checked = this.localConfig.midiSync;
+                this.midiSyncEnabled = this.localConfig.midiSync;
+            }
+            midiSyncChk.addEventListener('change', () => {
+                this.midiSyncEnabled = midiSyncChk.checked;
+                if (this.localConfig) {
+                    this.localConfig.midiSync = midiSyncChk.checked;
+                    this.saveConfig();
+                }
+            });
+        }
+        
+        const muteSyncChk = document.getElementById('setting-muteSync');
+        if (muteSyncChk) {
+            if (this.localConfig && this.localConfig.muteSync !== undefined) {
+                muteSyncChk.checked = this.localConfig.muteSync;
+                this.muteOnSyncEnabled = this.localConfig.muteSync;
+            }
+            muteSyncChk.addEventListener('change', () => {
+                this.muteOnSyncEnabled = muteSyncChk.checked;
+                if (this.localConfig) {
+                    this.localConfig.muteSync = muteSyncChk.checked;
+                    this.saveConfig();
+                }
+            });
+        }
 
         if (ghostBtn) {
             ghostBtn.addEventListener('click', () => {
@@ -927,16 +970,38 @@ class PocketLabApp {
         }
 
         this.midi.onMidiLog = (msg) => {
-            if (!hwConsole) return;
-            const logEl = document.createElement('div');
-            logEl.textContent = msg;
-            
-            // Because flex-direction is column-reverse, appending places it at the topological bottom but visually top
-            hwConsole.prepend(logEl);
-            
-            // Limit to 5000 messages
-            while (hwConsole.children.length > 5000) {
-                hwConsole.removeChild(hwConsole.lastChild);
+            const hwConsole = document.getElementById('hw-console');
+            if (hwConsole) {
+                const div = document.createElement('div');
+                div.textContent = msg;
+                hwConsole.prepend(div);
+                
+                // Keep max 5000 records
+                if (hwConsole.children.length > 5000) {
+                    hwConsole.removeChild(hwConsole.lastChild);
+                }
+            }
+        };
+        
+        // --- Master Clock Listeners ---
+        const playBtnNode = document.getElementById('play-btn');
+        this.midi.onMidiStart = () => {
+            if (this.midiSyncEnabled && !this.metronome.isPlaying) {
+                this.midi.activeSyncSession = true;
+                if (playBtnNode) playBtnNode.click();
+            }
+        };
+        this.midi.onMidiStop = () => {
+            if (this.midiSyncEnabled && this.metronome.isPlaying) {
+                this.midi.activeSyncSession = false;
+                if (playBtnNode) playBtnNode.click();
+            }
+        };
+        this.midi.onMidiTempo = (newBpm) => {
+            if (this.midiSyncEnabled) {
+                // Programmatically trigger updateBpm scope
+                const ev = new CustomEvent('force-bpm', { detail: newBpm });
+                document.dispatchEvent(ev);
             }
         };
     }

@@ -17,6 +17,7 @@ export class Metronome {
         this.tsCount = 4;
         this.tsSubdiv = 4;
         this.masterVolume = 1.0;
+        this.isPlaybackMuted = false;
         this.beepFrequency = 1000.0; // Configurable base frequency
         
         
@@ -137,7 +138,7 @@ export class Metronome {
                 this.masterGainNode = this.audioContext.createGain();
                 this.masterGainNode.connect(this.audioContext.destination);
             }
-            this.masterGainNode.gain.value = this.masterVolume;
+            this.masterGainNode.gain.value = this.isPlaybackMuted ? 0.0 : this.masterVolume;
             
             this.isPlaying = true;
             this.currentTick = 0;
@@ -230,6 +231,13 @@ export class Metronome {
             return (beatNumber === 1 || beatNumber === 3) && (tick % 12 === 0); 
         }
         return false;
+    }
+
+    setPlaybackMute(isMuted) {
+        this.isPlaybackMuted = isMuted;
+        if (this.masterGainNode) {
+            this.masterGainNode.gain.value = this.isPlaybackMuted ? 0.0 : this.masterVolume;
+        }
     }
 
     scheduleNote(tick, time) {

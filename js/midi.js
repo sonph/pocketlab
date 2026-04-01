@@ -1,3 +1,5 @@
+import { calculateBpmFromDeltas } from './scoring.js';
+
 export class MidiEngine {
     constructor() {
         this.midiAccess = null;
@@ -21,6 +23,14 @@ export class MidiEngine {
         this.ghostCalibrationMax = 0;
         
         this.liveMapTarget = null;
+        
+        // Master Clock Sync State
+        this.clockDeltas = [];
+        this.lastClockTime = 0;
+        this.currentClockBpm = 0;
+        this.onMidiStart = null;
+        this.onMidiStop = null;
+        this.onMidiTempo = null;
 
         // Logging state
         this.isLoggingEnabled = false;
@@ -61,6 +71,38 @@ export class MidiEngine {
         const note = event.data[1];
         const velocity = event.data.length > 2 ? event.data[2] : 0;
         const rawStatus = event.data[0];
+
+        // --- Master Clock Listeners ---
+        if (rawStatus === 250) { // 0xFA Start
+            if (this.onMidiStart) this.onMidiStart();
+            return;
+        }
+        if (rawStatus === 252) { // 0xFC Stop
+            if (this.onMidiStop) this.onMidiStop();
+            return;
+        }
+        if (rawStatus === 248) { // 0xF8 Timing Clock
+            const now = performance.now();
+            if (this.lastClockTime > 0) {
+                const delta = now - this.lastClockTime;
+                this.clockDeltas.push(delta);
+                if (this.clockDeltas.length > 24) { // Keep rolling window of 1 beat
+                    this.clockDeltas.shift();
+                }
+                if (this.clockDeltas.length === 24) {
+                    const bpm = calculateBpmFromDeltas(this.clockDeltas);
+                    if (bpm > 0) {
+                        const roundedBpm = Math.round(bpm);
+                        if (this.currentClockBpm !== roundedBpm) {
+                            this.currentClockBpm = roundedBpm;
+                            if (this.onMidiTempo) this.onMidiTempo(roundedBpm);
+                        }
+                    }
+                }
+            }
+            this.lastClockTime = now;
+            return; // Filter clock tick from logs to prevent spam
+        }
 
         // Format a standard time string
         const d = new Date();

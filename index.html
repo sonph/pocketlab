@@ -407,6 +407,30 @@
         <!-- Advanced View Focus -->
         <div id="view-advanced" style="display: none;">
             <div style="margin-bottom: 2rem;">
+                <label style="display: block; font-weight: bold; margin-bottom: 0.5rem; color: var(--color-primary-accent); font-size: 1.1rem;">System Synchronization</label>
+                <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span data-help="When enabled, Pocket Lab will automatically slave its Tempo and Start/Stop Engine to incoming Web MIDI Real-Time Clocks (e.g. Ableton Live via IAC Driver).">External MIDI Clock Sync:</span>
+                        <input type="checkbox" id="setting-midiSync" style="transform: scale(1.2);">
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+                        <span data-help="Automatically mutes the Pocket Lab metronome audio while external Master Sync is actively playing.">Mute Metronome when Synchronized:</span>
+                        <input type="checkbox" id="setting-muteSync" style="transform: scale(1.2);">
+                    </div>
+                    <details style="margin-top: 0.5rem; font-size: 0.85rem; color: #94a3b8; border-top: 1px dotted rgba(255,255,255,0.2); padding-top: 0.5rem;">
+                        <summary style="cursor: pointer; color: var(--color-primary-accent); font-weight: bold;">How to Setup Ableton Live Sync (macOS)</summary>
+                        <ol style="margin-top: 0.5rem; padding-left: 1.25rem; line-height: 1.4;">
+                            <li style="margin-bottom: 0.25rem;">Open the built-in macOS <strong>Audio MIDI Setup</strong> application.</li>
+                            <li style="margin-bottom: 0.25rem;">Go to Window -> Show MIDI Studio -> double-click <strong>IAC Driver</strong> and ensure "Device is online" is checked.</li>
+                            <li style="margin-bottom: 0.25rem;">Open <strong>Ableton Live</strong> -> Preferences -> Link/Tempo/MIDI.</li>
+                            <li style="margin-bottom: 0.25rem;">Under MIDI Ports, find <strong>Out: IAC Driver (Bus 1)</strong> and toggle <strong>Sync</strong> to <strong>On</strong>.</li>
+                            <li style="margin-bottom: 0.25rem;">Refresh Pocket Lab, ensure the <strong>External Sync</strong> toggle above is active. When you click Play in Ableton, Pocket Lab will automatically lock tempo and begin grading your playing synchronously!</li>
+                        </ol>
+                    </details>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
                 <label
                     style="display: block; font-weight: bold; margin-bottom: 0.5rem; color: var(--color-primary-accent); font-size: 1.1rem;">Audible
                     Feedback</label>
