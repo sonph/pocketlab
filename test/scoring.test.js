@@ -1,4 +1,5 @@
 import { calculateTimingScore, calculateBpmFromDeltas } from '../js/scoring.js';
+import { runTimelineTests } from './timeline.test.js';
 
 const output = document.getElementById('test-output');
 const progress = document.getElementById('test-progress');
@@ -74,6 +75,9 @@ try {
     } else {
         progress.style.color = '#f87171';
     }
+    
+    // Defer to the Timeline test suite
+    runTimelineTests();
 } catch(e) {
     output.innerHTML += `\n💥 ERROR during test execution: ${e.message}`;
     progress.innerHTML = `Test suite crashed or failed to load modules.`;

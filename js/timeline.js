@@ -181,28 +181,40 @@ export class TimelineVisualizer {
             
             this.ctx.fillStyle = hit.color;
             this.ctx.globalAlpha = alpha;
-            this.ctx.beginPath();
-            
             const size = 9; // Increased by 50% from 6
-            if (hit.shape === 'circle') {
-                this.ctx.arc(x, y, size, 0, Math.PI * 2);
-                this.ctx.fill();
-            } else if (hit.shape === 'square') {
-                this.ctx.fillRect(x - size, y - size, size * 2, size * 2);
-            } else if (hit.shape === 'triangle') {
-                this.ctx.moveTo(x, y - size);
-                this.ctx.lineTo(x + size, y + size);
-                this.ctx.lineTo(x - size, y + size);
-                this.ctx.fill();
-            } else if (hit.shape === 'diamond') {
-                this.ctx.moveTo(x, y - size);
-                this.ctx.lineTo(x + size, y);
-                this.ctx.lineTo(x, y + size);
-                this.ctx.lineTo(x - size, y);
-                this.ctx.fill();
-            } else {
-                this.ctx.arc(x, y, size, 0, Math.PI * 2);
-                this.ctx.fill();
+            
+            const drawHitShape = (drawX) => {
+                this.ctx.beginPath();
+                if (hit.shape === 'circle') {
+                    this.ctx.arc(drawX, y, size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                } else if (hit.shape === 'square') {
+                    this.ctx.fillRect(drawX - size, y - size, size * 2, size * 2);
+                } else if (hit.shape === 'triangle') {
+                    this.ctx.moveTo(drawX, y - size);
+                    this.ctx.lineTo(drawX + size, y + size);
+                    this.ctx.lineTo(drawX - size, y + size);
+                    this.ctx.fill();
+                } else if (hit.shape === 'diamond') {
+                    this.ctx.moveTo(drawX, y - size);
+                    this.ctx.lineTo(drawX + size, y);
+                    this.ctx.lineTo(drawX, y + size);
+                    this.ctx.lineTo(drawX - size, y);
+                    this.ctx.fill();
+                } else {
+                    this.ctx.arc(drawX, y, size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+            };
+            
+            // Primary render
+            drawHitShape(x);
+            
+            // Boundary wrap-around (left/right rollover)
+            if (x + size > this.canvas.width) {
+                drawHitShape(x - this.canvas.width);
+            } else if (x - size < 0) {
+                drawHitShape(x + this.canvas.width);
             }
             this.ctx.globalAlpha = 1.0;
         }
