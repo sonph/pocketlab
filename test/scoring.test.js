@@ -1,4 +1,4 @@
-import { calculateTimingScore, calculateBpmFromDeltas, selectFlamCandidate } from '../js/scoring.js';
+import { calculateTimingScore, calculateBpmFromDeltas, selectFlamCandidate, evaluateFeedbackResult } from '../js/scoring.js';
 import { runTimelineTests } from './timeline.test.js';
 
 const output = document.getElementById('test-output');
@@ -122,6 +122,63 @@ try {
     // Empty array returns null
     assertStrictEqual('Empty candidates returns null', selectFlamCandidate([]), null);
     assertStrictEqual('Null input returns null', selectFlamCandidate(null), null);
+
+    output.innerHTML += `\n--------------------------\n`;
+    output.innerHTML += `Running Feedback Evaluation tests...\n`;
+
+    // At 120bpm, 32nd note window is ±62.5ms
+    // Medium difficulty (diffFactor 0.5) -> Good zone is ±31.25ms
+
+    assertStrictEqual(
+        'Perfect hit (0ms) is in-zone',
+        evaluateFeedbackResult(0, 120, 'medium'),
+        'in-zone'
+    );
+
+    assertStrictEqual(
+        '10ms offset is in-zone (Medium)',
+        evaluateFeedbackResult(10, 120, 'medium'),
+        'in-zone'
+    );
+
+    assertStrictEqual(
+        '40ms offset is too-slow (Medium)',
+        evaluateFeedbackResult(40, 120, 'medium'),
+        'too-slow'
+    );
+
+    assertStrictEqual(
+        '-40ms offset is too-fast (Medium)',
+        evaluateFeedbackResult(-40, 120, 'medium'),
+        'too-fast'
+    );
+
+    assertStrictEqual(
+        '70ms offset is IGNORED (outside ±62.5ms window)',
+        evaluateFeedbackResult(70, 120, 'medium'),
+        'ignore'
+    );
+
+    assertStrictEqual(
+        '-70ms offset is IGNORED (outside ±62.5ms window)',
+        evaluateFeedbackResult(-70, 120, 'medium'),
+        'ignore'
+    );
+
+    // Difficulty scaling
+    // Hard (diffFactor 0.2) -> Good zone is ±12.5ms
+    assertStrictEqual(
+        '20ms offset is too-slow on HARD difficulty',
+        evaluateFeedbackResult(20, 120, 'hard'),
+        'too-slow'
+    );
+
+    // Easy (diffFactor 0.8) -> Good zone is ±50ms
+    assertStrictEqual(
+        '40ms offset is in-zone on EASY difficulty',
+        evaluateFeedbackResult(40, 120, 'easy'),
+        'in-zone'
+    );
 
     output.innerHTML += `\n--------------------------\n`;
     progress.innerHTML = `Tests Completed: ${passed}/${total} passed.`;

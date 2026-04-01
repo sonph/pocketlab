@@ -4,7 +4,7 @@ import { Visualizer } from './visualizer.js';
 import { Histogram } from './histogram.js';
 import { TimelineVisualizer } from './timeline.js';
 import { LimbMatrixVisualizer } from './limbMatrix.js';
-import { calculateTimingScore, selectFlamCandidate } from './scoring.js';
+import { calculateTimingScore, selectFlamCandidate, evaluateFeedbackResult } from './scoring.js';
 import { VelocityHistogram } from './velocityHistogram.js';
 
 /**
@@ -1019,35 +1019,28 @@ class PocketLabApp {
     }
 
     _evaluateFeedbackTiming(offsetMs) {
-        const offsetSecs = offsetMs / 1000.0;
-        const thirtySecondSecs = (60.0 / this.metronome.bpm) / 8.0;
+        const result = evaluateFeedbackResult(offsetMs, this.metronome.bpm, this.feedbackDifficultyMode);
 
-        let diffFactor = 0.5;
-        if (this.feedbackDifficultyMode === 'easy') diffFactor = 0.8;
-        else if (this.feedbackDifficultyMode === 'hard') diffFactor = 0.2;
+        if (result === 'ignore') {
+            return;
+        }
 
-        if (Math.abs(offsetSecs) <= thirtySecondSecs) {
-            const absOffset = Math.abs(offsetSecs);
-            if (absOffset <= thirtySecondSecs * diffFactor) {
-                this.consecutiveGoodFeedbackHits++;
-                if (this.consecutiveGoodFeedbackHits <= 2) {
-                    this.metronome.playFeedback('good');
-                } else if (this.consecutiveGoodFeedbackHits === 3) {
-                    this.metronome.playFeedback('great');
-                } else if (this.consecutiveGoodFeedbackHits >= 4) {
-                    this.metronome.playFeedback('perfect');
-                }
-            } else {
-                this.consecutiveGoodFeedbackHits = 0;
-                if (offsetSecs < 0) {
-                    this.metronome.playFeedback('toofast');
-                } else {
-                    this.metronome.playFeedback('tooslow');
-                }
+        if (result === 'in-zone') {
+            this.consecutiveGoodFeedbackHits++;
+            if (this.consecutiveGoodFeedbackHits <= 2) {
+                this.metronome.playFeedback('good');
+            } else if (this.consecutiveGoodFeedbackHits === 3) {
+                this.metronome.playFeedback('great');
+            } else if (this.consecutiveGoodFeedbackHits >= 4) {
+                this.metronome.playFeedback('perfect');
             }
         } else {
-            // Missed window entirely, break streak silently
             this.consecutiveGoodFeedbackHits = 0;
+            if (result === 'too-fast') {
+                this.metronome.playFeedback('toofast');
+            } else {
+                this.metronome.playFeedback('tooslow');
+            }
         }
     }
 
