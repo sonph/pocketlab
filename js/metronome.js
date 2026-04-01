@@ -112,7 +112,7 @@ export class Metronome {
         source.buffer = this.feedbackBuffers[type];
         source.connect(envelope);
         envelope.connect(this.masterGainNode);
-        envelope.gain.value = volume * this.feedbackVolume;
+        envelope.gain.value = volume * this.feedbackVolume * 0.5;
         source.start(0);
     }
 
@@ -340,7 +340,7 @@ export class Metronome {
             
                 source.connect(envelope);
                 envelope.connect(this.masterGainNode);
-                envelope.gain.value = volume;
+                envelope.gain.value = volume * 0.5;
                 
                 source.start(time);
             }
