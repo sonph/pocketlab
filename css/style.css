@@ -1,19 +1,31 @@
-/* Pocket Lab - Design System (Obsidian Midnight) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700;800&display=swap');
+
+/* Pocket Lab - Modern Design System (Obsidian Glass) */
 
 :root {
     /* Palette */
     --color-bg: #0F172A; /* Slate 900 */
-    --color-surface: #1E293B; /* Slate 800 */
-    --color-primary-accent: #38BDF8; /* Sky 400 */
-    --color-success: #10B981; /* Emerald 500 */
-    --color-warning: #F59E0B; /* Amber 500 */
-    --color-critical: #EF4444; /* Red 500 */
+    --color-surface: rgba(30, 41, 59, 0.8); /* Slate 800 semi-transparent */
+    --color-primary-accent: #38bdf8; /* Sky 400 */
+    --color-primary-hover: #7dd3fc;
+    --color-success: #10b981; /* Emerald 500 */
+    --color-warning: #f59e0b; /* Amber 500 */
+    --color-critical: #ef4444; /* Red 500 */
+    --color-text-main: #f8fafc;
+    --color-text-muted: #94a3b8;
 
     /* Typography */
+    --font-sans: 'Inter', system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
 
     /* Borders */
+    --border-radius-sm: 6px;
+    --border-radius-md: 8px;
     --border-radius-xl: 12px;
+    
+    /* Effects */
+    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
 
 *, *::before, *::after {
@@ -24,8 +36,15 @@ body {
     margin: 0;
     padding: 0;
     background-color: var(--color-bg);
-    color: #FFFFFF;
+    color: var(--color-text-main);
+    font-family: var(--font-sans); /* Shift default to modern sans */
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Numeric data gets monospace */
+.numeric-data, input[type="number"], .timer-display {
     font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
 }
 
 #app {
@@ -36,15 +55,176 @@ body {
     gap: 0;
 }
 
-/* Base surface component for cards/panels */
+/* ---------------------------------
+   Surfaces & Glassmorphism
+---------------------------------- */
+
 .surface {
     background-color: var(--color-surface);
     border-radius: var(--border-radius-xl);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: var(--glass-border);
     padding: 1rem;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
 }
 
-/* Glow effects for active state */
+.glass-panel {
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: var(--border-radius-md);
+    border: var(--glass-border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--glass-shadow);
+}
+
+/* Modals specifically */
+dialog.glass-modal {
+    background: rgba(30, 41, 59, 0.85);
+    color: var(--color-text-main);
+    padding: 2rem;
+    border: var(--glass-border);
+    border-radius: var(--border-radius-xl);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    max-width: 500px;
+    width: 90%;
+    margin: auto;
+}
+
+#modal-hardware {
+    max-width: 850px;
+}
+
+dialog::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+/* ---------------------------------
+   Buttons & Interactivity
+---------------------------------- */
+
+button {
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+}
+
+button:active {
+    transform: translateY(1px) scale(0.98);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #0284c7, var(--color-primary-accent));
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    border-radius: var(--border-radius-md);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 14px 0 rgba(14, 165, 233, 0.39);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0ea5e9, #7dd3fc);
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.6);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--color-text-main);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 0.4rem 1rem;
+    font-weight: 600;
+    border-radius: var(--border-radius-sm);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    padding: 0.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--color-primary-accent);
+}
+
+.btn-critical {
+    background: transparent;
+    color: var(--color-critical);
+    border: 1px solid var(--color-critical);
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius-sm);
+    font-weight: 600;
+}
+
+.btn-critical:hover {
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+}
+
+/* Form Elements */
+input[type="number"], select {
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.4rem;
+    border-radius: var(--border-radius-sm);
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+input[type="number"]:focus, select:focus {
+    border-color: var(--color-primary-accent);
+    outline: none;
+}
+
+input[type="checkbox"] {
+    accent-color: var(--color-primary-accent);
+    cursor: pointer;
+    width: 1.2rem;
+    height: 1.2rem;
+}
+
+input[type="range"] {
+    accent-color: var(--color-primary-accent);
+    cursor: pointer;
+}
+
+/* ---------------------------------
+   Animations
+---------------------------------- */
+
+@keyframes breathe-glow {
+    0% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
+    50% { box-shadow: 0 0 25px rgba(16, 185, 129, 0.8), inset 0 0 15px rgba(16, 185, 129, 0.2); }
+    100% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
+}
+
+.is-live {
+    background: linear-gradient(135deg, #059669, #10b981) !important;
+    animation: breathe-glow 2s infinite ease-in-out;
+    color: white !important;
+}
+
+/* Legacy support mappings */
 .glow-primary {
     box-shadow: 0 0 15px var(--color-primary-accent);
 }

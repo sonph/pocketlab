@@ -17,51 +17,38 @@
 <body>
     <div id="app">
         <!-- Top Horizontal Dashboard -->
-        <div id="top-bar" class="surface"
-            style="position: relative; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; z-index: 10;">
+        <div id="top-bar" class="glass-panel"
+            style="position: relative; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; z-index: 10;">
 
+            <!-- Execution Controls -->
             <div style="display: flex; align-items: center; gap: 1.5rem;">
-                <button id="play-btn"
-                    data-help="Click Start to run the metronome. The clock and bar counter will track your active session elapsed time."
-                    style="padding: 0.5rem 1rem; font-size: 1.2rem; cursor: pointer; background: var(--color-primary-accent); border: none; font-weight: bold; border-radius: 4px; color: black;">Start</button>
+                <button id="play-btn" class="btn-primary"
+                    data-help="Click Start to initiate your live coaching session. The master clock and bar counter will track your progress.">Start</button>
                 <div style="display: flex; gap: 1rem; align-items: baseline;">
-                    <span id="timer-display" data-help="Active elapsed time tracking."
-                        style="font-size: 0.9rem; font-variant-numeric: tabular-nums;">0:00</span>
-                    <span id="bar-display" data-help="Current measure count in the active setting interval."
-                        style="font-size: 0.9rem; font-variant-numeric: tabular-nums; color: var(--color-primary-accent);">BAR
-                        1</span>
+                    <span id="timer-display" data-help="Session Duration." class="numeric-data"
+                        style="font-size: 1.2rem;">0:00</span>
+                    <span id="bar-display" data-help="Current measure count in the active session." class="numeric-data"
+                        style="font-size: 1.2rem; color: var(--color-primary-accent);">BAR 1</span>
                     <div
                         style="width: 1px; height: 1.2rem; background: rgba(255,255,255,0.2); align-self: center; margin: 0 0.5rem;">
                     </div>
-                    <span id="score-display" data-help="Live Average Timing Score for the last 8 full bars."
-                        style="font-size: 0.9rem; font-weight: bold; font-variant-numeric: tabular-nums; color: var(--color-warning);">--%
-                        AVG (8 BARS)</span>
+                    <span id="score-display" data-help="Live Average Timing Score evaluated over the current window." class="numeric-data"
+                        style="font-size: 1.2rem; font-weight: bold; color: var(--color-warning);">--% AVG (8 BARS)</span>
                 </div>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 8px;"
-                data-help="BPM (Beats Per Minute) sets the main tempo. Use the quick-step buttons for rapid tuning.">
-                <span style="font-weight: bold;">BPM</span>
-                <button class="bpm-step"
-                    style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);"
-                    data-step="-10">-10</button>
-                <button class="bpm-step"
-                    style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);"
-                    data-step="-5">-5</button>
-                <button class="bpm-step"
-                    style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);"
-                    data-step="-1">-1</button>
-                <input type="number" id="bpm-input" value="120" min="40" max="300"
-                    style="width: 60px; text-align: center; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: white; padding: 0.2rem;">
-                <button class="bpm-step"
-                    style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);"
-                    data-step="1">+1</button>
-                <button class="bpm-step"
-                    style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);"
-                    data-step="5">+5</button>
-                <button class="bpm-step"
-                    style="cursor: pointer; background: none; color: white; border: 1px solid rgba(255,255,255,0.2);"
-                    data-step="10">+10</button>
+            <!-- BPM Tuner Engine -->
+            <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: var(--border-radius-md); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);"
+                data-help="Main Tempo (Beats Per Minute). Use the quick-step buttons for rapid tuning.">
+                <span style="font-weight: 800; color: var(--color-text-muted); padding-left: 0.5rem; letter-spacing: 1px;">BPM</span>
+                <button class="btn-secondary bpm-step" data-step="-10">-10</button>
+                <button class="btn-secondary bpm-step" data-step="-5">-5</button>
+                <button class="btn-secondary bpm-step" data-step="-1">-1</button>
+                <input type="number" id="bpm-input" class="numeric-data" value="120" min="40" max="300"
+                    style="width: 70px; text-align: center; font-size: 1.2rem; font-weight: bold; border-color: transparent;">
+                <button class="btn-secondary bpm-step" data-step="1">+1</button>
+                <button class="btn-secondary bpm-step" data-step="5">+5</button>
+                <button class="btn-secondary bpm-step" data-step="10">+10</button>
             </div>
 
             <!-- Master Volume -->
@@ -274,22 +261,22 @@
             <!-- Legacy Analytics Column (Right 30%) -->
             <div style="flex: 3; display: flex; flex-direction: column; overflow: hidden;">
                 <!-- Scatter Plot (Top 40%) -->
-                <div style="flex: 4; position: relative; border-bottom: 1px solid rgba(255,255,255,0.2);"
-                    data-help="Open Ended Scatter Plot. X-Axis: Timing Error. Y-Axis: Velocity. Inverse decaying notes fade based on your Advanced tuning.">
+                <div style="flex: 4; position: relative; border-bottom: 1px solid rgba(255,255,255,0.2);">
+                   <label data-help="Precision Scatter Plot. Analyzes your real-time timing accuracy and velocity as you play."></label>
                     <canvas id="lab-canvas"
                         style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
                 </div>
 
                 <!-- Histogram Bell Curve (Middle 20%) -->
-                <div style="flex: 2; position: relative; border-bottom: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3);"
-                    data-help="Pocket Heatmap (Session Histogram). A cumulative volume bell-curve collecting every strike across your active session.">
+                <div style="flex: 2; position: relative; border-bottom: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3);">
+                 <label style="margin-top: 0.5rem;" data-help="Accuracy Heatmap. Tracks your overall session precision via a bell curve summary."></label>
                     <canvas id="histogram-canvas"
                         style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
                 </div>
 
                 <!-- Limb Offset Matrix (Bottom 40%) -->
-                <div style="flex: 4; position: relative; background: rgba(0,0,0,0.1);"
-                    data-help="Limb Offset Matrix (The 'Smear' Detector). Evaluates Hi-Hat against Kick/Snare sync within a \u00B132nd note window. 2D Scatter plotted synchronously.">
+                <div style="flex: 4; position: relative; background: rgba(0,0,0,0.1);">
+                 <label style="margin-top: 0.5rem;" data-help="Limb Sync Matrix. Evaluates how tightly your Hi-Hat alignments sync up with Kick/Snare strokes."></label>
                     <canvas id="matrix-canvas"
                         style="position: absolute; top:0; left:0; width:100%; height:100%;"></canvas>
                 </div>
@@ -310,8 +297,8 @@
     </div>
 
     <!-- Hardware Setup Modal -->
-    <dialog id="modal-hardware"
-        style="background: var(--color-surface); color: white; padding: 2rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; max-width: 800px; width: 90%; margin: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+    <!-- Hardware Modal -->
+    <dialog id="modal-hardware" class="glass-modal">
         <div
             style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem;">
             <h2 style="margin: 0;">Device Setup & Calibration</h2>
@@ -499,18 +486,16 @@
     </dialog>
 
     <!-- Session Result Modal -->
-    <dialog id="modal-session-result"
-        style="background: var(--color-surface); color: white; padding: 2rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; max-width: 400px; width: 90%; margin: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); text-align: center;">
+    <!-- Session Result Modal -->
+    <dialog id="modal-session-result" class="glass-modal" style="text-align: center; max-width: 400px;">
         <h2 style="margin-top: 0; color: var(--color-primary-accent);">Practice Complete!</h2>
         <div style="font-size: 4rem; font-weight: bold; margin: 1rem 0; font-variant-numeric: tabular-nums;"
             id="result-score">--%</div>
         <p style="color: #94a3b8; margin-bottom: 2rem;" id="result-desc">Your session has been saved to the log.</p>
 
         <div style="display: flex; gap: 1rem; justify-content: center;">
-            <button id="btn-result-delete"
-                style="cursor: pointer; background: transparent; color: var(--color-critical); border: 1px solid var(--color-critical); padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold;">Discard</button>
-            <button id="btn-result-close"
-                style="cursor: pointer; background: var(--color-primary-accent); color: black; border: none; padding: 0.5rem 2rem; border-radius: 4px; font-weight: bold;">Close</button>
+            <button id="btn-result-delete" class="btn-critical">Discard</button>
+            <button id="btn-result-close" class="btn-primary">Close</button>
         </div>
     </dialog>
 

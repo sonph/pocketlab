@@ -73,6 +73,12 @@ class PocketLabApp {
                 playBtn.textContent = this.metronome.isPlaying ? 'Stop' : 'Start';
                 
                 if (this.metronome.isPlaying) {
+                    playBtn.classList.add('is-live');
+                } else {
+                    playBtn.classList.remove('is-live');
+                }
+                
+                if (this.metronome.isPlaying) {
                     this.sessionHitHistory = [];
                     if (this.scoreDisplay) this.scoreDisplay.textContent = '--% AVG (8 BARS)';
                     this.visualizer.isPlaying = this.metronome.isPlaying;
@@ -428,7 +434,10 @@ class PocketLabApp {
         });
 
         this.metronome.onIntervalComplete = () => {
-            if (playBtn) playBtn.textContent = 'Start';
+            if (playBtn) {
+                playBtn.textContent = 'Start';
+                playBtn.classList.remove('is-live');
+            }
             if (timerDisplay) timerDisplay.textContent = 'DONE';
             
             // Ensure this is only triggered on structural completions, not user stop overrides
@@ -706,6 +715,10 @@ class PocketLabApp {
                             this.saveConfig();
                         }
                         this.metronome.startStop(); // Kill metronome
+                        if (playBtn) {
+                            playBtn.textContent = 'Start';
+                            playBtn.classList.remove('is-live');
+                        }
                         this.metronome.onNoteScheduled = null;
                         btnCalibration.disabled = false;
                     }
