@@ -73,40 +73,63 @@ class PocketLabApp {
         const bpmInput = document.getElementById('bpm-input');
         const bpmSlider = document.getElementById('bpm-slider');
         
-            playBtn.addEventListener('click', () => {
-                this.metronome.startStop();
-                playBtn.textContent = this.metronome.isPlaying ? 'Stop' : 'Start';
+        const resetBtn = document.getElementById('reset-btn');
+        
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                this.metronome.reset();
+                playBtn.textContent = 'Start';
+                playBtn.classList.remove('is-live');
                 
-                if (this.metronome.isPlaying) {
-                    playBtn.classList.add('is-live');
-                    // Dynamic Mute application based on config state when starting
-                    if (this.midiSyncEnabled && this.muteOnSyncEnabled && this.midi.activeSyncSession) {
-                        this.metronome.setPlaybackMute(true);
-                    } else {
-                        this.metronome.setPlaybackMute(false);
-                    }
-                } else {
-                    playBtn.classList.remove('is-live');
-                    this.metronome.setPlaybackMute(false); // Restore unmuted status on stop
-                }
-                
-                if (this.metronome.isPlaying) {
-                    this.sessionHitHistory = [];
-                    if (this.scoreDisplay) this.scoreDisplay.textContent = '--% AVG (8 BARS)';
-                    this.visualizer.isPlaying = this.metronome.isPlaying;
-                }
+                this.sessionHitHistory = [];
+                if (this.scoreDisplay) this.scoreDisplay.textContent = '--% AVG (8 BARS)';
                 
                 if (this.visualizer) {
-                    this.visualizer.isPlaying = this.metronome.isPlaying;
+                    this.visualizer.isPlaying = false;
+                    this.visualizer.hits = [];
                 }
                 if (this.limbMatrix) {
-                    this.limbMatrix.isPlaying = this.metronome.isPlaying;
-                    if (this.metronome.isPlaying) this.limbMatrix.clear();
+                    this.limbMatrix.isPlaying = false;
+                    this.limbMatrix.clear();
                 }
-                if (this.histogram && this.metronome.isPlaying) {
+                if (this.histogram) {
                     this.histogram.clear();
                 }
+                if (this.timeline) {
+                    this.timeline.hits = [];
+                }
+                // Clear active clocks
+                const timerDisplay = document.getElementById('timer-display');
+                const barDisplay = document.getElementById('bar-display');
+                if (timerDisplay) timerDisplay.textContent = '0:00';
+                if (barDisplay) barDisplay.textContent = 'BAR 0';
             });
+        }
+        
+        playBtn.addEventListener('click', () => {
+            this.metronome.togglePlay();
+            playBtn.textContent = this.metronome.isPlaying ? 'Pause' : (this.metronome.pausedAtTime ? 'Resume' : 'Start');
+            
+            if (this.metronome.isPlaying) {
+                playBtn.classList.add('is-live');
+                // Dynamic Mute application based on config state when starting
+                if (this.midiSyncEnabled && this.muteOnSyncEnabled && this.midi.activeSyncSession) {
+                    this.metronome.setPlaybackMute(true);
+                } else {
+                    this.metronome.setPlaybackMute(false);
+                }
+            } else {
+                playBtn.classList.remove('is-live');
+                this.metronome.setPlaybackMute(false); // Restore unmuted status on pause
+            }
+            
+            if (this.visualizer) {
+                this.visualizer.isPlaying = this.metronome.isPlaying;
+            }
+            if (this.limbMatrix) {
+                this.limbMatrix.isPlaying = this.metronome.isPlaying;
+            }
+        });
         
         const updateBpm = (val) => {
             let bpm = typeof val === 'string' ? parseInt(val, 10) : val;
@@ -505,7 +528,7 @@ class PocketLabApp {
         };
 
         const renderTimer = () => {
-            if (this.metronome.isPlaying && this.metronome.sessionStartTime) {
+            if (this.metronome.isPlaying && this.metronome.sessionStartTime && !this.metronome.pausedAtTime && this.metronome.resumeCountInBarsLeft <= 0) {
                 // Time
                 const elapsedCtx = this.metronome.audioContext.currentTime - this.metronome.sessionStartTime;
                 const m = Math.floor(elapsedCtx / 60);
@@ -518,6 +541,9 @@ class PocketLabApp {
                     const activeBars = this.metronome.currentBarTotal - this.metronome.countInBars + 1;
                     barDisplay.textContent = `BAR ${activeBars}`;
                 }
+            } else if (this.metronome.isPlaying && this.metronome.resumeCountInBarsLeft > 0) {
+                if (timerDisplay) timerDisplay.textContent = `-IN: ${this.metronome.resumeCountInBarsLeft} BAR(S)`;
+                if (barDisplay) barDisplay.textContent = 'RESUMING';
             } else if (this.metronome.isPlaying && this.metronome.currentBarTotal < this.metronome.countInBars) {
                 const barsLeft = this.metronome.countInBars - this.metronome.currentBarTotal;
                 if (timerDisplay) timerDisplay.textContent = `-IN: ${barsLeft} BAR(S)`;
@@ -527,11 +553,19 @@ class PocketLabApp {
             }
             
             if (this.timeline) {
-                const isRunning = this.metronome.isPlaying && this.metronome.sessionStartTime && this.metronome.currentBarTotal >= this.metronome.countInBars;
+                const isRunning = this.metronome.isPlaying && this.metronome.sessionStartTime && this.metronome.currentBarTotal >= this.metronome.countInBars && this.metronome.resumeCountInBarsLeft <= 0;
                 let activeSecs = -1;
-                if (isRunning) {
-                    activeSecs = this.metronome.audioContext.currentTime - this.metronome.sessionStartTime;
+                
+                if (this.metronome.sessionStartTime) {
+                    if (this.metronome.pausedAtTime) {
+                        // Locked to snapshot during pause or pseudo-count-in
+                        activeSecs = this.metronome.pausedAtTime - this.metronome.sessionStartTime;
+                    } else {
+                        // Free running
+                        activeSecs = this.metronome.audioContext.currentTime - this.metronome.sessionStartTime;
+                    }
                 }
+                
                 this.timeline.render(isRunning, activeSecs);
             }
             

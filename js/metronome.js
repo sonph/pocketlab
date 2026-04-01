@@ -62,6 +62,8 @@ export class Metronome {
         this.nextNoteTime = 0.0;
         this.timerWorker = null;
         this.sessionStartTime = null; 
+        this.pausedAtTime = null;
+        this.resumeCountInBarsLeft = 0;
         
         this.gapRadioActive = false; 
         this.gapBarCounter = 0;
@@ -122,10 +124,11 @@ export class Metronome {
         Object.assign(this, settings);
     }
 
-    startStop() {
+    togglePlay() {
         if (this.isPlaying) {
             this.isPlaying = false;
             window.clearTimeout(this.timerWorker);
+            if (this.audioContext) this.pausedAtTime = this.audioContext.currentTime;
         } else {
             if (!this.audioContext) {
                 this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -143,17 +146,55 @@ export class Metronome {
             this.masterGainNode.gain.value = this.isPlaybackMuted ? 0.0 : this.masterVolume;
             
             this.isPlaying = true;
-            this.currentTick = 0;
-            this.currentBarTotal = 0;
-            this.sessionStartTime = null;
             
-            this.gapRadioActive = false;
-            this.gapBarCounter = 0;
-            if (this.gapRadioMode === 'random-bar') this.rollRandomBars();
-
             this.nextNoteTime = this.audioContext.currentTime + 0.05;
+
+            if (this.pausedAtTime && this.sessionStartTime) {
+                // Return to snap start of the bar before resuming
+                this.currentTick = 0;
+                
+                // Erase fractional measure overflows to anchor timeline visually to downbeat
+                const secondsPerBeat = 60.0 / this.getEffectiveQuarterBpm();
+                const quartersPerBar = this.tsCount * (4.0 / this.tsSubdiv);
+                const secondsPerBar = secondsPerBeat * quartersPerBar;
+                const totalElapsed = this.pausedAtTime - this.sessionStartTime;
+                this.sessionStartTime += (totalElapsed % secondsPerBar);
+                
+                if (this.countInBars > 0) {
+                    this.resumeCountInBarsLeft = this.countInBars;
+                    // Do not offset `pausedAtTime` yet. It will calculate elapsed offset once this resume sequence completes.
+                } else {
+                    const pauseDuration = this.nextNoteTime - this.pausedAtTime;
+                    this.sessionStartTime += pauseDuration;
+                    this.pausedAtTime = null;
+                }
+            } else if (!this.pausedAtTime) {
+                // Hard Start initial boot loop
+                this.currentTick = 0;
+                this.currentBarTotal = 0;
+                this.sessionStartTime = null;
+                
+                this.gapRadioActive = false;
+                this.gapBarCounter = 0;
+                if (this.gapRadioMode === 'random-bar') this.rollRandomBars();
+            }
+
             this.scheduler();
         }
+    }
+    
+    reset() {
+        if (this.isPlaying) {
+            this.isPlaying = false;
+            window.clearTimeout(this.timerWorker);
+        }
+        this.currentTick = 0;
+        this.currentBarTotal = 0;
+        this.sessionStartTime = null;
+        this.pausedAtTime = null;
+        this.resumeCountInBarsLeft = 0;
+        this.gapRadioActive = false;
+        this.gapBarCounter = 0;
     }
 
     setBpm(newBpm) {
@@ -184,8 +225,17 @@ export class Metronome {
         this.currentTick++; 
         if (this.currentTick >= ticksPerBar) {
             this.currentTick = 0;
-            this.currentBarTotal++;
-            this.handleGapBarTransitions();
+            if (this.resumeCountInBarsLeft > 0) {
+                this.resumeCountInBarsLeft--;
+                if (this.resumeCountInBarsLeft === 0 && this.pausedAtTime && this.audioContext) {
+                    const pauseDuration = this.nextNoteTime - this.pausedAtTime;
+                    this.sessionStartTime += pauseDuration;
+                    this.pausedAtTime = null;
+                }
+            } else {
+                this.currentBarTotal++;
+                this.handleGapBarTransitions();
+            }
         }
     }
     
@@ -249,7 +299,7 @@ export class Metronome {
     }
 
     scheduleNote(tick, time) {
-        const isCountInPhase = this.currentBarTotal < this.countInBars;
+        const isCountInPhase = (this.currentBarTotal < this.countInBars) || (this.resumeCountInBarsLeft > 0);
 
         // Kick off tracking timing explicitly when entering interval
         if (this.currentTick === 0 && this.currentBarTotal === this.countInBars && !this.sessionStartTime) {
@@ -416,7 +466,7 @@ export class Metronome {
 
     scheduler() {
         if (this.checkIntervalCompletion()) {
-            this.startStop(); 
+            this.togglePlay(); 
             if (this.onIntervalComplete) this.onIntervalComplete();
             return;
         }
