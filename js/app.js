@@ -4,7 +4,7 @@ import { Visualizer } from './visualizer.js';
 import { Histogram } from './histogram.js';
 import { TimelineVisualizer } from './timeline.js';
 import { LimbMatrixVisualizer } from './limbMatrix.js';
-import { calculateTimingScore, selectFlamCandidate, evaluateFeedbackResult, selectFeedbackCue } from './scoring.js';
+import { calculateTimingScore, selectFlamCandidate, evaluateFeedbackResult, selectFeedbackCue, findClosestExpectedHit } from './scoring.js';
 import { VelocityHistogram } from './velocityHistogram.js';
 
 /**
@@ -29,7 +29,9 @@ class PocketLabApp {
         this.feedbackOnlyCorrections = false;
         this.midiSyncEnabled = false;
         this.muteOnSyncEnabled = false;
-        this.sessionHitHistory = []; // Local history of scores for sliding average calculation
+        this.sessionRollingBars = [];
+        this.sessionRollingScoreSum = 0;
+        this.sessionRollingScoreCount = 0;
         this.pendingSnareHit = null; // Buffer for flam detection: { targetTime, offsetMs, velocity }
         this.scoreDisplay = document.getElementById('score-display');
         this.init();
@@ -82,7 +84,10 @@ class PocketLabApp {
                 playBtn.textContent = 'Start';
                 playBtn.classList.remove('is-live');
                 
-                this.sessionHitHistory = [];
+                this.expectedHits = [];
+                this.pendingSnareHit = null;
+                this.lastEvaluatedFeedbackTarget = -1;
+                this._resetRollingScoreWindow();
                 if (this.scoreDisplay) this.scoreDisplay.textContent = '--% AVG (8 BARS)';
                 
                 if (this.visualizer) {
@@ -880,16 +885,11 @@ class PocketLabApp {
             if (this.expectedHits.length === 0 || !this.visualizer) return;
             
             const now = performance.now();
-            let closestHit = this.expectedHits[0];
-            let minDiff = Math.abs(now - expectedHitPerfTime(closestHit.time));
-            
-            for(let i = 1; i < this.expectedHits.length; i++) {
-                const diff = Math.abs(now - expectedHitPerfTime(this.expectedHits[i].time));
-                if (diff < minDiff) {
-                    minDiff = diff;
-                    closestHit = this.expectedHits[i];
-                }
-            }
+            const nowAudio = this.metronome.audioContext.currentTime;
+            const audioToPerfOffsetMs = now - (nowAudio * 1000) + this.midi.latencySys;
+            const expectedHitPerfTime = (audioTimeSecs) => (audioTimeSecs * 1000) + audioToPerfOffsetMs;
+            const closestHit = findClosestExpectedHit(this.expectedHits, now, expectedHitPerfTime);
+            if (!closestHit) return;
             
             
             // Expected time physically arriving from drum
@@ -977,19 +977,10 @@ class PocketLabApp {
             if (Math.abs(offsetMs) < 400) {
                 
                 if (this.metronome.isPlaying && !this.metronome.isCountInPhase) {
-                    this.sessionHitHistory.push({
-                        score: timingScore,
-                        bar: this.metronome.currentBarTotal
-                    });
+                    this._recordRollingScore(timingScore, this.metronome.currentBarTotal);
 
-                    // Purge anything older than 8 bars from the window
-                    const currentBar = this.metronome.currentBarTotal;
-                    const minBarAllowed = currentBar - 7; // Current bar + 7 previous
-                    this.sessionHitHistory = this.sessionHitHistory.filter(h => h.bar >= minBarAllowed);
-
-                    if (this.scoreDisplay && this.sessionHitHistory.length > 0) {
-                        const sum = this.sessionHitHistory.reduce((acc, h) => acc + h.score, 0);
-                        const avg = Math.round(sum / this.sessionHitHistory.length);
+                    if (this.scoreDisplay && this.sessionRollingScoreCount > 0) {
+                        const avg = Math.round(this.sessionRollingScoreSum / this.sessionRollingScoreCount);
                         this.scoreDisplay.textContent = `${avg}% AVG (8 BARS)`;
                     }
                 }
@@ -1006,14 +997,6 @@ class PocketLabApp {
                      this.histogram.addHit(offsetMs);
                  }
             }
-        };
-
-        // Helper to convert audio Time to performance.now()
-        const expectedHitPerfTime = (audioTimeSecs) => {
-            const nowAudio = this.metronome.audioContext.currentTime;
-            const nowPerf = performance.now();
-            // T_target_arrival = T_click_audio + L_sys
-            return nowPerf + ((audioTimeSecs - nowAudio) * 1000) + this.midi.latencySys;
         };
 
         // Logging & Troubleshooter logic
@@ -1263,14 +1246,44 @@ class PocketLabApp {
              
              // Queue management
              this.expectedHits.push({ time: scheduleObj.time, beatIndex: scheduleObj.beatIndex });
-             
-             // Ensure sorted list after pushing (though metronome should send sequentially)
-             this.expectedHits.sort((a,b) => a.time - b.time);
-             
+
              // Clear out old expectations to prevent memory leak
              const nowAudio = this.metronome.audioContext.currentTime;
-             this.expectedHits = this.expectedHits.filter(hit => hit.time > nowAudio - 2.0); // keep 2 seconds of history
+             while (this.expectedHits.length > 0 && this.expectedHits[0].time <= nowAudio - 2.0) {
+                 this.expectedHits.shift();
+             }
         };
+    }
+
+    _resetRollingScoreWindow() {
+        this.sessionRollingBars = [];
+        this.sessionRollingScoreSum = 0;
+        this.sessionRollingScoreCount = 0;
+    }
+
+    _recordRollingScore(score, currentBar) {
+        const latestBar = this.sessionRollingBars[this.sessionRollingBars.length - 1];
+        if (latestBar && currentBar < latestBar.bar) {
+            this._resetRollingScoreWindow();
+        }
+
+        let barBucket = this.sessionRollingBars[this.sessionRollingBars.length - 1];
+        if (!barBucket || barBucket.bar !== currentBar) {
+            barBucket = { bar: currentBar, sum: 0, count: 0 };
+            this.sessionRollingBars.push(barBucket);
+        }
+
+        barBucket.sum += score;
+        barBucket.count += 1;
+        this.sessionRollingScoreSum += score;
+        this.sessionRollingScoreCount += 1;
+
+        const minBarAllowed = currentBar - 7;
+        while (this.sessionRollingBars.length > 0 && this.sessionRollingBars[0].bar < minBarAllowed) {
+            const expiredBar = this.sessionRollingBars.shift();
+            this.sessionRollingScoreSum -= expiredBar.sum;
+            this.sessionRollingScoreCount -= expiredBar.count;
+        }
     }
 
     setupDebugSimulator() {

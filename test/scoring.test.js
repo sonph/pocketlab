@@ -1,4 +1,4 @@
-import { calculateTimingScore, calculateBpmFromDeltas, selectFlamCandidate, evaluateFeedbackResult, selectFeedbackCue } from '../js/scoring.js';
+import { calculateTimingScore, calculateBpmFromDeltas, selectFlamCandidate, evaluateFeedbackResult, selectFeedbackCue, findClosestExpectedHit } from '../js/scoring.js';
 import { runTimelineTests } from './timeline.test.js';
 
 const output = document.getElementById('test-output');
@@ -229,6 +229,34 @@ try {
         'Only-corrections mode still plays too-slow',
         selectFeedbackCue('too-slow', 0, true),
         'tooslow'
+    );
+
+    output.innerHTML += `\n--------------------------\n`;
+    output.innerHTML += `Running Expected Hit Selection tests...\n`;
+
+    const expectedHits = [
+        { time: 10, beatIndex: 0 },
+        { time: 20, beatIndex: 1 },
+        { time: 30, beatIndex: 2 }
+    ];
+    const toPerfTime = (audioTimeSecs) => audioTimeSecs * 10;
+
+    assertStrictEqual(
+        'Closest expected hit selection prefers the nearest scheduled target',
+        findClosestExpectedHit(expectedHits, 205, toPerfTime),
+        expectedHits[1]
+    );
+
+    assertStrictEqual(
+        'Closest expected hit selection remains stable on equal-distance ties',
+        findClosestExpectedHit(expectedHits, 250, toPerfTime),
+        expectedHits[1]
+    );
+
+    assertStrictEqual(
+        'Closest expected hit selection safely returns null for empty input',
+        findClosestExpectedHit([], 100, toPerfTime),
+        null
     );
 
     output.innerHTML += `\n--------------------------\n`;

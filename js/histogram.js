@@ -1,3 +1,5 @@
+import { resizeHiDPICanvas } from './visualizer.js';
+
 export class Histogram {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
@@ -32,10 +34,7 @@ export class Histogram {
             for (let entry of entries) {
                 this.width = entry.contentRect.width;
                 this.height = entry.contentRect.height;
-                // Native pixel scaling for Retina/HDPI screens
-                this.canvas.width = this.width * window.devicePixelRatio;
-                this.canvas.height = this.height * window.devicePixelRatio;
-                this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+                resizeHiDPICanvas(this.canvas, this.ctx, this.width, this.height, window.devicePixelRatio);
                 this.needsRender = true;
             }
         });

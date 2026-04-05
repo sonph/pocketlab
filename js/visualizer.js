@@ -1,3 +1,18 @@
+export function resizeHiDPICanvas(canvas, ctx, width, height, devicePixelRatio = 1) {
+    const dpr = devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+
+    if (ctx && typeof ctx.setTransform === 'function') {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return;
+    }
+
+    if (ctx && typeof ctx.scale === 'function') {
+        ctx.scale(dpr, dpr);
+    }
+}
+
 export class Visualizer {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
@@ -37,9 +52,7 @@ export class Visualizer {
             for (let entry of entries) {
                 this.width = entry.contentRect.width;
                 this.height = entry.contentRect.height;
-                this.canvas.width = this.width * window.devicePixelRatio;
-                this.canvas.height = this.height * window.devicePixelRatio;
-                this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+                resizeHiDPICanvas(this.canvas, this.ctx, this.width, this.height, window.devicePixelRatio);
                 this.needsRender = true;
             }
         });

@@ -1,3 +1,5 @@
+import { resizeHiDPICanvas } from './visualizer.js';
+
 export class LimbMatrixVisualizer {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
@@ -30,9 +32,7 @@ export class LimbMatrixVisualizer {
             for (let entry of entries) {
                 this.width = entry.contentRect.width;
                 this.height = entry.contentRect.height;
-                this.canvas.width = this.width * window.devicePixelRatio;
-                this.canvas.height = this.height * window.devicePixelRatio;
-                this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+                resizeHiDPICanvas(this.canvas, this.ctx, this.width, this.height, window.devicePixelRatio);
                 this.needsRender = true;
             }
         });

@@ -1,5 +1,5 @@
 import { TimelineVisualizer } from '../js/timeline.js';
-import { runMetronomeTests } from './metronome.test.js';
+import { runVisualizerTests } from './visualizer.test.js';
 
 const output = document.getElementById('test-output');
 const progress = document.getElementById('test-progress');
@@ -69,6 +69,6 @@ export function runTimelineTests() {
     }
     
     output.innerHTML += `\n--------------------------\n`;
-    // Defer to Metronome test suite
-    runMetronomeTests();
+    // Defer to the Visualizer test suite
+    runVisualizerTests();
 }

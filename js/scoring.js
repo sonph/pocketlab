@@ -112,3 +112,44 @@ export function selectFeedbackCue(result, consecutiveGoodHits, onlyCorrections =
 
     return result === 'too-fast' ? 'toofast' : 'tooslow';
 }
+
+/**
+ * Finds the expected hit whose physical arrival time is closest to the current performance timestamp.
+ * Stable on ties: the earliest matching candidate in the array wins.
+ *
+ * @param {Array<{ time: number }>} expectedHits - Scheduled expected hits.
+ * @param {number} nowPerf - Current performance.now() timestamp.
+ * @param {(audioTimeSecs: number) => number} expectedHitPerfTime - Maps audio time to performance time.
+ * @returns {{ time: number } | null} The closest expected hit, or null if none exist.
+ */
+export function findClosestExpectedHit(expectedHits, nowPerf, expectedHitPerfTime) {
+    if (!expectedHits || expectedHits.length === 0) {
+        return null;
+    }
+    
+    let left = 0;
+    let right = expectedHits.length - 1;
+
+    while (left <= right) {
+        const mid = Math.floor((left + right) / 2);
+        const perfTime = expectedHitPerfTime(expectedHits[mid].time);
+
+        if (perfTime < nowPerf) {
+            left = mid + 1;
+        } else if (perfTime > nowPerf) {
+            right = mid - 1;
+        } else {
+            return expectedHits[mid];
+        }
+    }
+
+    const prevHit = right >= 0 ? expectedHits[right] : null;
+    const nextHit = left < expectedHits.length ? expectedHits[left] : null;
+
+    if (!prevHit) return nextHit;
+    if (!nextHit) return prevHit;
+
+    const prevDiff = Math.abs(nowPerf - expectedHitPerfTime(prevHit.time));
+    const nextDiff = Math.abs(nowPerf - expectedHitPerfTime(nextHit.time));
+    return prevDiff <= nextDiff ? prevHit : nextHit;
+}
