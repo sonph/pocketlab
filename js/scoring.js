@@ -83,3 +83,32 @@ export function evaluateFeedbackResult(offsetMs, bpm, difficultyMode) {
         return offsetSecs < 0 ? 'too-fast' : 'too-slow';
     }
 }
+
+/**
+ * Selects which audible feedback cue should play for a feedback result.
+ *
+ * @param {'ignore'|'in-zone'|'too-fast'|'too-slow'} result - Classified feedback result.
+ * @param {number} consecutiveGoodHits - Current in-zone streak after incrementing for this hit.
+ * @param {boolean} [onlyCorrections=false] - Whether to suppress positive cues.
+ * @returns {'good'|'great'|'perfect'|'toofast'|'tooslow'|null} The feedback sample key to play, if any.
+ */
+export function selectFeedbackCue(result, consecutiveGoodHits, onlyCorrections = false) {
+    if (result === 'ignore') {
+        return null;
+    }
+
+    if (result === 'in-zone') {
+        if (onlyCorrections) {
+            return null;
+        }
+        if (consecutiveGoodHits <= 2) {
+            return 'good';
+        }
+        if (consecutiveGoodHits === 3) {
+            return 'great';
+        }
+        return 'perfect';
+    }
+
+    return result === 'too-fast' ? 'toofast' : 'tooslow';
+}

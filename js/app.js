@@ -4,7 +4,7 @@ import { Visualizer } from './visualizer.js';
 import { Histogram } from './histogram.js';
 import { TimelineVisualizer } from './timeline.js';
 import { LimbMatrixVisualizer } from './limbMatrix.js';
-import { calculateTimingScore, selectFlamCandidate, evaluateFeedbackResult } from './scoring.js';
+import { calculateTimingScore, selectFlamCandidate, evaluateFeedbackResult, selectFeedbackCue } from './scoring.js';
 import { VelocityHistogram } from './velocityHistogram.js';
 
 /**
@@ -26,6 +26,7 @@ class PocketLabApp {
         this.lastEvaluatedFeedbackTarget = -1;
         this.feedbackTriggerMode = 'snare';
         this.feedbackDifficultyMode = 'medium';
+        this.feedbackOnlyCorrections = false;
         this.midiSyncEnabled = false;
         this.muteOnSyncEnabled = false;
         this.sessionHitHistory = []; // Local history of scores for sliding average calculation
@@ -330,6 +331,22 @@ class PocketLabApp {
                 if (fVolVal) fVolVal.textContent = `${e.target.value}%`;
                 if (this.localConfig) {
                     this.localConfig.feedbackVolume = vol;
+                    this.saveConfig();
+                }
+            });
+        }
+
+        const feedbackOnlyCorrectionsChk = document.getElementById('setting-feedbackOnlyCorrections');
+        if (feedbackOnlyCorrectionsChk) {
+            if (this.localConfig && this.localConfig.feedbackOnlyCorrections !== undefined) {
+                feedbackOnlyCorrectionsChk.checked = this.localConfig.feedbackOnlyCorrections;
+            }
+            this.feedbackOnlyCorrections = feedbackOnlyCorrectionsChk.checked;
+            feedbackOnlyCorrectionsChk.addEventListener('change', () => {
+                this.feedbackOnlyCorrections = feedbackOnlyCorrectionsChk.checked;
+                this.consecutiveGoodFeedbackHits = 0;
+                if (this.localConfig) {
+                    this.localConfig.feedbackOnlyCorrections = feedbackOnlyCorrectionsChk.checked;
                     this.saveConfig();
                 }
             });
@@ -1070,20 +1087,13 @@ class PocketLabApp {
 
         if (result === 'in-zone') {
             this.consecutiveGoodFeedbackHits++;
-            if (this.consecutiveGoodFeedbackHits <= 2) {
-                this.metronome.playFeedback('good');
-            } else if (this.consecutiveGoodFeedbackHits === 3) {
-                this.metronome.playFeedback('great');
-            } else if (this.consecutiveGoodFeedbackHits >= 4) {
-                this.metronome.playFeedback('perfect');
-            }
         } else {
             this.consecutiveGoodFeedbackHits = 0;
-            if (result === 'too-fast') {
-                this.metronome.playFeedback('toofast');
-            } else {
-                this.metronome.playFeedback('tooslow');
-            }
+        }
+
+        const cue = selectFeedbackCue(result, this.consecutiveGoodFeedbackHits, this.feedbackOnlyCorrections);
+        if (cue) {
+            this.metronome.playFeedback(cue);
         }
     }
 

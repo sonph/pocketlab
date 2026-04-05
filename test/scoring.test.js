@@ -1,4 +1,4 @@
-import { calculateTimingScore, calculateBpmFromDeltas, selectFlamCandidate, evaluateFeedbackResult } from '../js/scoring.js';
+import { calculateTimingScore, calculateBpmFromDeltas, selectFlamCandidate, evaluateFeedbackResult, selectFeedbackCue } from '../js/scoring.js';
 import { runTimelineTests } from './timeline.test.js';
 
 const output = document.getElementById('test-output');
@@ -178,6 +178,57 @@ try {
         '40ms offset is in-zone on EASY difficulty',
         evaluateFeedbackResult(40, 120, 'easy'),
         'in-zone'
+    );
+
+    output.innerHTML += `\n--------------------------\n`;
+    output.innerHTML += `Running Feedback Cue Selection tests...\n`;
+
+    assertStrictEqual(
+        'Ignore result produces no audible cue',
+        selectFeedbackCue('ignore', 0, false),
+        null
+    );
+
+    assertStrictEqual(
+        'First in-zone hit plays good',
+        selectFeedbackCue('in-zone', 1, false),
+        'good'
+    );
+
+    assertStrictEqual(
+        'Second in-zone hit still plays good',
+        selectFeedbackCue('in-zone', 2, false),
+        'good'
+    );
+
+    assertStrictEqual(
+        'Third in-zone hit upgrades to great',
+        selectFeedbackCue('in-zone', 3, false),
+        'great'
+    );
+
+    assertStrictEqual(
+        'Fourth in-zone hit upgrades to perfect',
+        selectFeedbackCue('in-zone', 4, false),
+        'perfect'
+    );
+
+    assertStrictEqual(
+        'Only-corrections mode suppresses positive cues',
+        selectFeedbackCue('in-zone', 4, true),
+        null
+    );
+
+    assertStrictEqual(
+        'Only-corrections mode still plays too-fast',
+        selectFeedbackCue('too-fast', 0, true),
+        'toofast'
+    );
+
+    assertStrictEqual(
+        'Only-corrections mode still plays too-slow',
+        selectFeedbackCue('too-slow', 0, true),
+        'tooslow'
     );
 
     output.innerHTML += `\n--------------------------\n`;
