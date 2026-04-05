@@ -23,6 +23,7 @@ export class Visualizer {
         this.height = 0;
         
         this.hits = [];
+        this.hitStartIndex = 0;
         this.maxHits = 200; // Event count fade
         
         // Auto-scaling dynamic bounds
@@ -68,8 +69,12 @@ export class Visualizer {
             timestamp: providedTimestamp !== null ? providedTimestamp : this.virtualTime
         });
         
-        if (this.hits.length > this.maxHits) {
-            this.hits.shift();
+        if ((this.hits.length - this.hitStartIndex) > this.maxHits) {
+            this.hitStartIndex++;
+        }
+        if (this.hitStartIndex > 64) {
+            this.hits = this.hits.slice(this.hitStartIndex);
+            this.hitStartIndex = 0;
         }
         
         this.updateScaling();
@@ -105,7 +110,8 @@ export class Visualizer {
         }
 
         let absoluteMax = 0;
-        for (const hit of this.hits) {
+        for (let i = this.hitStartIndex; i < this.hits.length; i++) {
+            const hit = this.hits[i];
             if (Math.abs(hit.offsetMs) > absoluteMax) {
                 absoluteMax = Math.abs(hit.offsetMs);
             }
@@ -130,16 +136,9 @@ export class Visualizer {
             if (this.isPlaying) {
                 this.virtualTime += deltaMs;
             }
-            
-            let hasActiveHits = false;
-            for (let i = 0; i < this.hits.length; i++) {
-                if ((this.virtualTime - this.hits[i].timestamp) / 1000.0 <= this.fadeSeconds) {
-                    hasActiveHits = true;
-                    break;
-                }
-            }
+            const hasHits = this.hits.length > this.hitStartIndex;
 
-            if (!this.isPlaying && !hasActiveHits && !this.needsRender) {
+            if (!this.isPlaying && !hasHits && !this.needsRender) {
                 requestAnimationFrame(render);
                 return;
             }
@@ -210,11 +209,13 @@ export class Visualizer {
             this.ctx.fillText(`Velocity ${this.minVelocity}`, centerX + 10, this.height - 10);
 
             // Render Hits smoothly synced with time
-            for (let i = 0; i < this.hits.length; i++) {
+            const activeHits = [];
+            for (let i = this.hitStartIndex; i < this.hits.length; i++) {
                 const hit = this.hits[i];
                 
                 const ageSecs = (this.virtualTime - hit.timestamp) / 1000.0;
                 if (ageSecs > this.fadeSeconds) continue; // Note has fully dissolved
+                activeHits.push(hit);
                 
                 // Opacity curve: exponential decay (inverse cubic) for high-performance fluid tail
                 const opacityPercent = 1.0 - (ageSecs / this.fadeSeconds);
@@ -242,6 +243,10 @@ export class Visualizer {
                 const y = this.height - yPad - ((velAdjusted / velRange) * plottableHeight);
                 
                 this.drawShape(x, y, hit.shape, hit.color, opacity);
+            }
+            if (this.hitStartIndex > 0 || activeHits.length !== (this.hits.length - this.hitStartIndex)) {
+                this.hits = activeHits;
+                this.hitStartIndex = 0;
             }
             
             requestAnimationFrame(render);

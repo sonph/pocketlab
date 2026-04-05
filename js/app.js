@@ -34,6 +34,9 @@ class PocketLabApp {
         this.sessionRollingScoreCount = 0;
         this.pendingSnareHit = null; // Buffer for flam detection: { targetTime, offsetMs, velocity }
         this.scoreDisplay = document.getElementById('score-display');
+        this.logBuffer = [];
+        this.logFlushScheduled = false;
+        this.hwConsoleEl = null;
         this.init();
     }
 
@@ -510,6 +513,8 @@ class PocketLabApp {
         const btnClose = document.getElementById('btn-result-close');
 
         let lastSavedSessionObj = null;
+        let lastTimerText = null;
+        let lastBarText = null;
 
         if (btnClose) btnClose.addEventListener('click', () => resultModal.close());
         if (btnDelete) btnDelete.addEventListener('click', () => {
@@ -556,20 +561,46 @@ class PocketLabApp {
                 const m = Math.floor(elapsedCtx / 60);
                 const s = Math.floor(elapsedCtx % 60);
                 if (elapsedCtx >= 0 && timerDisplay) {
-                    timerDisplay.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+                    const nextTimerText = `${m}:${s.toString().padStart(2, '0')}`;
+                    if (nextTimerText !== lastTimerText) {
+                        timerDisplay.textContent = nextTimerText;
+                        lastTimerText = nextTimerText;
+                    }
                 }
                 // Bars
                 if (barDisplay) {
                     const activeBars = this.metronome.currentBarTotal - this.metronome.countInBars + 1;
-                    barDisplay.textContent = `BAR ${activeBars}`;
+                    const nextBarText = `BAR ${activeBars}`;
+                    if (nextBarText !== lastBarText) {
+                        barDisplay.textContent = nextBarText;
+                        lastBarText = nextBarText;
+                    }
                 }
             } else if (this.metronome.isPlaying && this.metronome.resumeCountInBarsLeft > 0) {
-                if (timerDisplay) timerDisplay.textContent = `-IN: ${this.metronome.resumeCountInBarsLeft} BAR(S)`;
-                if (barDisplay) barDisplay.textContent = 'RESUMING';
+                if (timerDisplay) {
+                    const nextTimerText = `-IN: ${this.metronome.resumeCountInBarsLeft} BAR(S)`;
+                    if (nextTimerText !== lastTimerText) {
+                        timerDisplay.textContent = nextTimerText;
+                        lastTimerText = nextTimerText;
+                    }
+                }
+                if (barDisplay && lastBarText !== 'RESUMING') {
+                    barDisplay.textContent = 'RESUMING';
+                    lastBarText = 'RESUMING';
+                }
             } else if (this.metronome.isPlaying && this.metronome.currentBarTotal < this.metronome.countInBars) {
                 const barsLeft = this.metronome.countInBars - this.metronome.currentBarTotal;
-                if (timerDisplay) timerDisplay.textContent = `-IN: ${barsLeft} BAR(S)`;
-                if (barDisplay) barDisplay.textContent = 'BAR --';
+                if (timerDisplay) {
+                    const nextTimerText = `-IN: ${barsLeft} BAR(S)`;
+                    if (nextTimerText !== lastTimerText) {
+                        timerDisplay.textContent = nextTimerText;
+                        lastTimerText = nextTimerText;
+                    }
+                }
+                if (barDisplay && lastBarText !== 'BAR --') {
+                    barDisplay.textContent = 'BAR --';
+                    lastBarText = 'BAR --';
+                }
             } else if (!this.metronome.isPlaying) {
                 // Do not reset the visual display to 0:00 here so the last record holds
             }
@@ -1003,6 +1034,7 @@ class PocketLabApp {
         const levelSel = document.getElementById('log-level-filter');
         const btnClearLog = document.getElementById('btn-clear-log');
         const hwConsole = document.getElementById('hw-console');
+        this.hwConsoleEl = hwConsole;
 
         if (levelSel) {
             if (this.localConfig && this.localConfig.logLevel !== undefined) {
@@ -1020,22 +1052,13 @@ class PocketLabApp {
 
         if (btnClearLog && hwConsole) {
             btnClearLog.addEventListener('click', () => {
+                this.logBuffer = [];
                 hwConsole.innerHTML = '<div>[System] Console cleared. Waiting for events...</div>';
             });
         }
 
         this.midi.onMidiLog = (msg) => {
-            const hwConsole = document.getElementById('hw-console');
-            if (hwConsole) {
-                const div = document.createElement('div');
-                div.textContent = msg;
-                hwConsole.prepend(div);
-                
-                // Keep max 5000 records
-                if (hwConsole.children.length > 5000) {
-                    hwConsole.removeChild(hwConsole.lastChild);
-                }
-            }
+            this._queueMidiLog(msg);
         };
         
         // --- Master Clock Listeners ---
@@ -1084,31 +1107,32 @@ class PocketLabApp {
         const tbody = document.getElementById('mapping-tbody');
         if (!tbody) return;
         tbody.innerHTML = '';
+        const mergeRideEnabled = document.getElementById('setting-merge-ride')?.checked;
         
         for (const [id, config] of Object.entries(this.midi.mappings)) {
             const tr = document.createElement('tr');
             const noteIdsStr = config.noteIds.join(', ');
-            const isMergedRide = id === 'ride' && document.getElementById('setting-merge-ride') && document.getElementById('setting-merge-ride').checked;
+            const isMergedRide = id === 'ride' && mergeRideEnabled;
             const disabledState = isMergedRide ? 'disabled' : '';
             const opacityState = isMergedRide ? 'opacity: 0.3; pointer-events: none;' : '';
 
             tr.innerHTML = `
                 <td style="padding: 0.5rem; text-transform: capitalize;">${config.name} ${isMergedRide ? '(Merged)' : ''}</td>
                 <td style="padding: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <input type="text" id="map-note-${id}" data-help="Comma separated numeric Note IDs for this drum zone (e.g. 38, 40)" value="${noteIdsStr}" style="width: 100%; max-width: 120px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;" placeholder="38, 40">
-                    <button class="clear-map-btn" data-id="${id}" data-help="Clear all registered Note IDs for this instrument." style="cursor:pointer; padding: 0.2rem; border-radius: 4px; background: rgba(239, 68, 68, 0.2); color: var(--color-critical); border: 1px solid var(--color-critical);" title="Clear Notes">
+                    <input type="text" data-role="map-note" data-id="${id}" data-help="Comma separated numeric Note IDs for this drum zone (e.g. 38, 40)" value="${noteIdsStr}" style="width: 100%; max-width: 120px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.2rem;" placeholder="38, 40">
+                    <button class="clear-map-btn" data-role="clear-map" data-id="${id}" data-help="Clear all registered Note IDs for this instrument." style="cursor:pointer; padding: 0.2rem; border-radius: 4px; background: rgba(239, 68, 68, 0.2); color: var(--color-critical); border: 1px solid var(--color-critical);" title="Clear Notes">
                         🗑️
                     </button>
                 </td>
                 <td style="padding: 0.5rem;">
-                    <button class="live-map-btn" data-id="${id}" data-help="Click 'Listen' to capture MIDI notes. Strike your pads in different ways to register multiple zones. Click 'Stop' when done." style="cursor:pointer; padding: 0.2rem 0.5rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
+                    <button class="live-map-btn" data-role="live-map" data-id="${id}" data-help="Click 'Listen' to capture MIDI notes. Strike your pads in different ways to register multiple zones. Click 'Stop' when done." style="cursor:pointer; padding: 0.2rem 0.5rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
                         ${this.midi.liveMapTarget === id ? 'Stop' : 'Listen'}
                     </button>
                 </td>
                 <td style="padding: 0.5rem;">
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <input type="color" id="map-col-${id}" value="${config.color}" style="border: none; background: none; width: 30px; height: 30px; cursor: pointer; ${opacityState}" ${disabledState}>
-                        <select id="map-shape-${id}" style="background: rgba(0,0,0,0.3); color: white; padding: 0.2rem; border-radius: 4px; ${opacityState}" ${disabledState}>
+                        <input type="color" data-role="map-color" data-id="${id}" value="${config.color}" style="border: none; background: none; width: 30px; height: 30px; cursor: pointer; ${opacityState}" ${disabledState}>
+                        <select data-role="map-shape" data-id="${id}" style="background: rgba(0,0,0,0.3); color: white; padding: 0.2rem; border-radius: 4px; ${opacityState}" ${disabledState}>
                             <option value="circle" ${config.shape==='circle'?'selected':''}>Circle</option>
                             <option value="square" ${config.shape==='square'?'selected':''}>Square</option>
                             <option value="triangle" ${config.shape==='triangle'?'selected':''}>Triangle</option>
@@ -1118,60 +1142,64 @@ class PocketLabApp {
                 </td>
             `;
             tbody.appendChild(tr);
-            
-            const nInput = document.getElementById(`map-note-${id}`);
-            if (nInput) nInput.addEventListener('change', (e) => {
-                // Parse "38, 40, 42" into [38, 40, 42]
-                const valStr = e.target.value;
-                const arr = valStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-                this.midi.updateMap(id, arr, null, null);
-                if (this.localConfig) {
-                    this.localConfig.mappings = this.midi.mappings;
-                    this.saveConfig();
-                }
-                this.renderMappingTable(); 
-            });
-            
-            const colInput = document.getElementById(`map-col-${id}`);
-            if (colInput) colInput.addEventListener('change', (e) => {
-                this.midi.updateMap(id, null, null, e.target.value);
-                if (this.localConfig) {
-                    this.localConfig.mappings = this.midi.mappings;
-                    this.saveConfig();
-                }
-            });
-            
-            const shapeSel = document.getElementById(`map-shape-${id}`);
-            if (shapeSel) shapeSel.addEventListener('change', (e) => {
-                this.midi.updateMap(id, null, e.target.value, null);
-                if (this.localConfig) {
-                    this.localConfig.mappings = this.midi.mappings;
-                    this.saveConfig();
-                }
-            });
         }
 
-        const liveBtns = document.querySelectorAll('.live-map-btn');
-        liveBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const mapId = e.currentTarget.dataset.id;
-                this.midi.listenForMap(mapId);
-                this.renderMappingTable(); 
-            });
-        });
+        if (!this.mappingTableBound) {
+            tbody.addEventListener('change', (e) => {
+                const target = e.target.closest('[data-role]');
+                if (!target) return;
+                const mapId = target.dataset.id;
+                const role = target.dataset.role;
 
-        const clearBtns = document.querySelectorAll('.clear-map-btn');
-        clearBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const mapId = e.currentTarget.dataset.id;
-                this.midi.clearMap(mapId);
+                if (role === 'map-note') {
+                    const arr = target.value.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+                    this.midi.updateMap(mapId, arr, null, null);
+                    if (this.localConfig) {
+                        this.localConfig.mappings = this.midi.mappings;
+                        this.saveConfig();
+                    }
+                    this.renderMappingTable();
+                    return;
+                }
+
+                if (role === 'map-color') {
+                    this.midi.updateMap(mapId, null, null, target.value);
+                } else if (role === 'map-shape') {
+                    this.midi.updateMap(mapId, null, target.value, null);
+                } else {
+                    return;
+                }
+
                 if (this.localConfig) {
                     this.localConfig.mappings = this.midi.mappings;
                     this.saveConfig();
                 }
-                this.renderMappingTable();
             });
-        });
+
+            tbody.addEventListener('click', (e) => {
+                const target = e.target.closest('[data-role]');
+                if (!target) return;
+                const mapId = target.dataset.id;
+                const role = target.dataset.role;
+
+                if (role === 'live-map') {
+                    this.midi.listenForMap(mapId);
+                    this.renderMappingTable();
+                    return;
+                }
+
+                if (role === 'clear-map') {
+                    this.midi.clearMap(mapId);
+                    if (this.localConfig) {
+                        this.localConfig.mappings = this.midi.mappings;
+                        this.saveConfig();
+                    }
+                    this.renderMappingTable();
+                }
+            });
+
+            this.mappingTableBound = true;
+        }
     }
 
     setupCanvas() {
@@ -1283,6 +1311,32 @@ class PocketLabApp {
             const expiredBar = this.sessionRollingBars.shift();
             this.sessionRollingScoreSum -= expiredBar.sum;
             this.sessionRollingScoreCount -= expiredBar.count;
+        }
+    }
+
+    _queueMidiLog(msg) {
+        if (!this.hwConsoleEl) return;
+        this.logBuffer.push(msg);
+        if (this.logFlushScheduled) return;
+        this.logFlushScheduled = true;
+        requestAnimationFrame(() => this._flushMidiLogs());
+    }
+
+    _flushMidiLogs() {
+        this.logFlushScheduled = false;
+        if (!this.hwConsoleEl || this.logBuffer.length === 0) return;
+
+        const fragment = document.createDocumentFragment();
+        for (let i = this.logBuffer.length - 1; i >= 0; i--) {
+            const div = document.createElement('div');
+            div.textContent = this.logBuffer[i];
+            fragment.appendChild(div);
+        }
+        this.logBuffer = [];
+        this.hwConsoleEl.prepend(fragment);
+
+        while (this.hwConsoleEl.children.length > 5000) {
+            this.hwConsoleEl.removeChild(this.hwConsoleEl.lastChild);
         }
     }
 

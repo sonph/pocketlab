@@ -1,9 +1,21 @@
+import { resizeHiDPICanvas } from './visualizer.js';
+
 export class TimelineVisualizer {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
         this.hits = [];
         this.tracks = ['ride', 'hihat', 'tom1', 'snare', 'tom2', 'kick'];
+        this.width = 0;
+        this.height = 0;
+        this.trackIndexMap = this.tracks.reduce((acc, track, index) => {
+            acc[track] = index;
+            return acc;
+        }, {});
+        this.trackLabels = this.tracks.map(track => track.toUpperCase());
+        this.staticCanvas = document.createElement('canvas');
+        this.staticCtx = this.staticCanvas.getContext('2d');
+        this.staticLayoutDirty = true;
         
         this.resizeObserver = new ResizeObserver(() => this.resize());
         this.resizeObserver.observe(this.canvas.parentElement);
@@ -20,8 +32,11 @@ export class TimelineVisualizer {
 
     resize() {
         const parent = this.canvas.parentElement;
-        this.canvas.width = parent.clientWidth;
-        this.canvas.height = parent.clientHeight;
+        this.width = parent.clientWidth;
+        this.height = parent.clientHeight;
+        resizeHiDPICanvas(this.canvas, this.ctx, this.width, this.height, window.devicePixelRatio);
+        resizeHiDPICanvas(this.staticCanvas, this.staticCtx, this.width, this.height, window.devicePixelRatio);
+        this.staticLayoutDirty = true;
         this.needsRender = true;
         // Don't draw immediately if not initialized
     }
@@ -32,11 +47,13 @@ export class TimelineVisualizer {
         this.tsCount = tsCount || 4;
         this.tsSubdiv = tsSubdiv || 4;
         this.gridSubdivs = parseInt(gridSubdivisions) || 4;
+        this.staticLayoutDirty = true;
         this.needsRender = true;
     }
 
     addHit(instrument, velocity, color, shape, elapsedSecs) {
-        if (!this.tracks.includes(instrument)) return;
+        const trackIdx = this.trackIndexMap[instrument];
+        if (trackIdx === undefined) return;
         
         if (elapsedSecs < 0) return;
         
@@ -52,6 +69,7 @@ export class TimelineVisualizer {
             velocity,
             hitX,
             windowIndex,
+            trackIdx,
             color,
             shape
         });
@@ -61,13 +79,12 @@ export class TimelineVisualizer {
 
     render(isPlaying, elapsedSecs) {
         if (!this.ctx) return;
+        if (this.width === 0 || this.height === 0) return;
         
         if (!isPlaying && !this.needsRender) return;
         this.needsRender = false;
-        
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        const trackHeight = this.canvas.height / this.tracks.length;
+
+        const trackHeight = this.height / this.tracks.length;
         
         let playheadXRatio = 0;
         let activeWindowIndex = -1;
@@ -92,90 +109,16 @@ export class TimelineVisualizer {
             
             // Maintain current and previous window hits for wiping effect
             if (activeWindowIndex !== this.currentWindowIndex && isPlaying) {
-                this.hits = this.hits.filter(h => h.windowIndex >= activeWindowIndex - 1);
+                while (this.hits.length > 0 && this.hits[0].windowIndex < activeWindowIndex - 1) {
+                    this.hits.shift();
+                }
                 this.currentWindowIndex = activeWindowIndex;
             }
         }
 
-        // Layout UI Grid
-        this.ctx.font = '11px JetBrains Mono';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.lineWidth = 1;
-        
-        for (let i = 0; i < this.tracks.length; i++) {
-            const yCenter = (i * trackHeight) + (trackHeight / 2);
-            
-            // Alternate lane shading matching UI aesthetic
-            if (i % 2 === 0) {
-                this.ctx.fillStyle = 'rgba(255,255,255,0.02)';
-                this.ctx.fillRect(0, i * trackHeight, this.canvas.width, trackHeight);
-            }
-            
-            // Central strike line
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, yCenter);
-            this.ctx.lineTo(this.canvas.width, yCenter);
-            this.ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-            this.ctx.stroke();
-
-            // Track Label Anchor
-            this.ctx.fillStyle = 'rgba(255,255,255,0.4)';
-            this.ctx.textAlign = 'left';
-            this.ctx.textBaseline = 'top';
-            this.ctx.fillText(this.tracks[i].toUpperCase(), 15, (i * trackHeight) + 4);
-            this.ctx.textBaseline = 'middle'; // reset for other uses if any
-            
-            // Right edge border
-            this.ctx.beginPath();
-            this.ctx.moveTo(this.canvas.width - 1, i * trackHeight);
-            this.ctx.lineTo(this.canvas.width - 1, (i + 1) * trackHeight);
-            this.ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-            this.ctx.stroke();
-        }
-
-        // Background Math Grids
-        const validGridConfig = this.gridSubdivs || 4;
-        const quartersPerBar = this.tsCount * (4.0 / this.tsSubdiv);
-        const totalQuarters = this.windowBars * quartersPerBar;
-        
-        for (let bar = 0; bar <= this.windowBars; bar++) {
-            const barOffsetQ = bar * quartersPerBar;
-            
-            // Draw bar boundary
-            const barX = (barOffsetQ / totalQuarters) * this.canvas.width;
-            this.ctx.beginPath();
-            this.ctx.moveTo(barX, 0);
-            this.ctx.lineTo(barX, this.canvas.height);
-            this.ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-            this.ctx.lineWidth = 2;
-            this.ctx.stroke();
-            
-            if (bar === this.windowBars) continue;
-            
-            // Draw internal grids for this bar
-            const numLinesOverBar = Math.floor(quartersPerBar * validGridConfig);
-            for (let b = 1; b <= numLinesOverBar; b++) {
-                const subQ = b / validGridConfig;
-                if (Math.abs(subQ - quartersPerBar) < 0.001) continue;
-                
-                const qPos = barOffsetQ + subQ;
-                const gridX = (qPos / totalQuarters) * this.canvas.width;
-                
-                this.ctx.beginPath();
-                this.ctx.moveTo(gridX, 0);
-                this.ctx.lineTo(gridX, this.canvas.height);
-                
-                if (b % validGridConfig === 0) {
-                    this.ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-                    this.ctx.lineWidth = 1;
-                } else {
-                    this.ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-                    this.ctx.lineWidth = 1;
-                }
-                this.ctx.stroke();
-            }
-        }
-        this.ctx.lineWidth = 1; // reset after grid loop
+        this._renderStaticLayout(trackHeight);
+        this.ctx.clearRect(0, 0, this.width, this.height);
+        this.ctx.drawImage(this.staticCanvas, 0, 0, this.width, this.height);
 
         // Plot registered strikes
         for (const hit of this.hits) {
@@ -193,11 +136,8 @@ export class TimelineVisualizer {
                 }
             }
             
-            const trackIdx = this.tracks.indexOf(hit.instrument);
-            if (trackIdx === -1) continue;
-            
-            const x = hit.hitX * this.canvas.width;
-            const y = (trackIdx * trackHeight) + (trackHeight / 2);
+            const x = hit.hitX * this.width;
+            const y = (hit.trackIdx * trackHeight) + (trackHeight / 2);
             
             // Opacity maps physical velocity. Base 10% floor for extreme ghost hits.
             const alpha = Math.max(0.1, hit.velocity / 127.0) * fadeMult;
@@ -256,20 +196,20 @@ export class TimelineVisualizer {
             drawHitShape(x);
             
             // Boundary wrap-around (left/right rollover)
-            if (x + size > this.canvas.width) {
-                drawHitShape(x - this.canvas.width);
+            if (x + size > this.width) {
+                drawHitShape(x - this.width);
             } else if (x - size < 0) {
-                drawHitShape(x + this.canvas.width);
+                drawHitShape(x + this.width);
             }
             this.ctx.globalAlpha = 1.0;
         }
 
         // Playhead sweep
         if (renderSecs >= 0) {
-            const px = playheadXRatio * this.canvas.width;
+            const px = playheadXRatio * this.width;
             this.ctx.beginPath();
             this.ctx.moveTo(px, 0);
-            this.ctx.lineTo(px, this.canvas.height);
+            this.ctx.lineTo(px, this.height);
             
             this.ctx.shadowBlur = 10;
             this.ctx.shadowColor = '#38bdf8';
@@ -280,5 +220,84 @@ export class TimelineVisualizer {
             this.ctx.shadowBlur = 0;
             this.ctx.lineWidth = 1;
         }
+    }
+
+    _renderStaticLayout(trackHeight) {
+        if (!this.staticLayoutDirty) return;
+
+        const ctx = this.staticCtx;
+        const width = this.width;
+        const height = this.height;
+        ctx.clearRect(0, 0, width, height);
+        ctx.font = '11px JetBrains Mono';
+        ctx.textBaseline = 'middle';
+        ctx.lineWidth = 1;
+
+        for (let i = 0; i < this.tracks.length; i++) {
+            const yCenter = (i * trackHeight) + (trackHeight / 2);
+
+            if (i % 2 === 0) {
+                ctx.fillStyle = 'rgba(255,255,255,0.02)';
+                ctx.fillRect(0, i * trackHeight, width, trackHeight);
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(0, yCenter);
+            ctx.lineTo(width, yCenter);
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.stroke();
+
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText(this.trackLabels[i], 15, (i * trackHeight) + 4);
+            ctx.textBaseline = 'middle';
+
+            ctx.beginPath();
+            ctx.moveTo(width - 1, i * trackHeight);
+            ctx.lineTo(width - 1, (i + 1) * trackHeight);
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.stroke();
+        }
+
+        const validGridConfig = this.gridSubdivs || 4;
+        const quartersPerBar = this.tsCount * (4.0 / this.tsSubdiv);
+        const totalQuarters = this.windowBars * quartersPerBar;
+
+        for (let bar = 0; bar <= this.windowBars; bar++) {
+            const barOffsetQ = bar * quartersPerBar;
+            const barX = (barOffsetQ / totalQuarters) * width;
+            ctx.beginPath();
+            ctx.moveTo(barX, 0);
+            ctx.lineTo(barX, height);
+            ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            if (bar === this.windowBars) continue;
+
+            const numLinesOverBar = Math.floor(quartersPerBar * validGridConfig);
+            for (let b = 1; b <= numLinesOverBar; b++) {
+                const subQ = b / validGridConfig;
+                if (Math.abs(subQ - quartersPerBar) < 0.001) continue;
+
+                const qPos = barOffsetQ + subQ;
+                const gridX = (qPos / totalQuarters) * width;
+                ctx.beginPath();
+                ctx.moveTo(gridX, 0);
+                ctx.lineTo(gridX, height);
+                if (b % validGridConfig === 0) {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                    ctx.lineWidth = 1;
+                } else {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+                    ctx.lineWidth = 1;
+                }
+                ctx.stroke();
+            }
+        }
+
+        ctx.lineWidth = 1;
+        this.staticLayoutDirty = false;
     }
 }

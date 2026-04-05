@@ -14,6 +14,7 @@ export class LimbMatrixVisualizer {
         
         this.pendingWindows = {}; 
         this.points = [];
+        this.pointStartIndex = 0;
         this.maxPoints = 150;
         
         this.fadeSeconds = 3.0;
@@ -53,6 +54,7 @@ export class LimbMatrixVisualizer {
 
     clear() {
         this.points = [];
+        this.pointStartIndex = 0;
         this.pendingWindows = {};
         this.needsRender = true;
     }
@@ -104,8 +106,12 @@ export class LimbMatrixVisualizer {
 
     commitPoint(x, y, color, shape, timestamp) {
         this.points.push({ x, y, color, shape, timestamp });
-        if (this.points.length > this.maxPoints) {
-            this.points.shift();
+        if ((this.points.length - this.pointStartIndex) > this.maxPoints) {
+            this.pointStartIndex++;
+        }
+        if (this.pointStartIndex > 64) {
+            this.points = this.points.slice(this.pointStartIndex);
+            this.pointStartIndex = 0;
         }
     }
 
@@ -129,19 +135,8 @@ export class LimbMatrixVisualizer {
                 this.virtualTime += dt;
             }
             this.lastRenderRealTime = now;
-            
-            let hasActiveHits = false;
-            for (let i = 0; i < this.points.length; i++) {
-                let ageSecs = this.virtualTime - this.points[i].timestamp;
-                if (ageSecs < 0) ageSecs = 0;
-                let alpha = 1.0 - (ageSecs / this.fadeSeconds);
-                if (alpha > 0) {
-                    hasActiveHits = true;
-                    break;
-                }
-            }
 
-            if (!this.isPlaying && !hasActiveHits && !this.needsRender) {
+            if (!this.isPlaying && this.points.length === this.pointStartIndex && !this.needsRender) {
                 requestAnimationFrame(render);
                 return;
             }
@@ -184,16 +179,15 @@ export class LimbMatrixVisualizer {
             this.ctx.fillText('(Snare Early)', cx - 5, 15);
 
             // Points
-            for (let i = this.points.length - 1; i >= 0; i--) {
+            const activePoints = [];
+            for (let i = this.pointStartIndex; i < this.points.length; i++) {
                 const p = this.points[i];
                 let ageSecs = this.virtualTime - p.timestamp;
                 if (ageSecs < 0) ageSecs = 0;
                 
                 let alpha = 1.0 - (ageSecs / this.fadeSeconds);
-                if (alpha <= 0) {
-                    this.points.splice(i, 1);
-                    continue;
-                }
+                if (alpha <= 0) continue;
+                activePoints.push(p);
                 
                 // Opacity curve: Math.pow to make it fade slower organically
                 alpha = Math.max(0.1, Math.min(1.0, Math.pow(alpha, 0.4)));
@@ -256,6 +250,10 @@ export class LimbMatrixVisualizer {
                 }
                 this.ctx.drawImage(this.shapeCache[cacheKey], mappedX - 12, mappedY - 12);
                 this.ctx.globalAlpha = 1.0;
+            }
+            if (this.pointStartIndex > 0 || activePoints.length !== (this.points.length - this.pointStartIndex)) {
+                this.points = activePoints;
+                this.pointStartIndex = 0;
             }
             
             requestAnimationFrame(render);

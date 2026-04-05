@@ -1,3 +1,5 @@
+import { resizeHiDPICanvas } from './visualizer.js';
+
 /**
  * Velocity Histogram — Pocket Lab
  *
@@ -39,9 +41,7 @@ export class VelocityHistogram {
             for (let entry of entries) {
                 this.width = entry.contentRect.width;
                 this.height = entry.contentRect.height;
-                this.canvas.width = this.width * window.devicePixelRatio;
-                this.canvas.height = this.height * window.devicePixelRatio;
-                this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+                resizeHiDPICanvas(this.canvas, this.ctx, this.width, this.height, window.devicePixelRatio);
                 this.needsRender = true;
             }
         });
@@ -55,7 +55,14 @@ export class VelocityHistogram {
      * @param {string} label - Display label
      */
     registerInstrument(id, color, label) {
-        this.instruments[id] = { hits: [], color, label, enabled: true };
+        this.instruments[id] = {
+            hits: [],
+            color,
+            label,
+            enabled: true,
+            buckets: new Array(this.bucketCount).fill(0),
+            peak: 0
+        };
         this.needsRender = true;
     }
 
@@ -82,7 +89,13 @@ export class VelocityHistogram {
      */
     addHit(id, velocity) {
         if (!this.instruments[id] || !this.instruments[id].enabled) return;
-        this.instruments[id].hits.push(velocity);
+        const inst = this.instruments[id];
+        inst.hits.push(velocity);
+        const idx = this._getBucketIndex(velocity);
+        if (idx !== -1) {
+            inst.buckets[idx]++;
+            if (inst.buckets[idx] > inst.peak) inst.peak = inst.buckets[idx];
+        }
         this.needsRender = true;
     }
 
@@ -90,6 +103,7 @@ export class VelocityHistogram {
     setRange(minVelocity, maxVelocity = 127) {
         this.minVelocity = Math.max(0, minVelocity);
         this.maxVelocity = Math.min(127, maxVelocity);
+        this._rebuildAllBuckets();
         this.needsRender = true;
     }
 
@@ -97,6 +111,8 @@ export class VelocityHistogram {
     clear() {
         for (const id of Object.keys(this.instruments)) {
             this.instruments[id].hits = [];
+            this.instruments[id].buckets = new Array(this.bucketCount).fill(0);
+            this.instruments[id].peak = 0;
         }
         this.needsRender = true;
     }
@@ -105,22 +121,27 @@ export class VelocityHistogram {
     // Internal helpers
     // -----------------------------------------------------------------------
 
-    /** Compute frequency buckets for one instrument. Returns { buckets, peak }. */
-    _buildBuckets(hits) {
+    _getBucketIndex(v) {
+        if (v < this.minVelocity || v > this.maxVelocity) return -1;
         const range = this.maxVelocity - this.minVelocity;
-        const buckets = new Array(this.bucketCount).fill(0);
-        let peak = 0;
+        return Math.min(
+            this.bucketCount - 1,
+            Math.floor(((v - this.minVelocity) / (range || 1)) * this.bucketCount)
+        );
+    }
 
-        for (const v of hits) {
-            if (v < this.minVelocity || v > this.maxVelocity) continue;
-            const idx = Math.min(
-                this.bucketCount - 1,
-                Math.floor(((v - this.minVelocity) / (range || 1)) * this.bucketCount)
-            );
-            buckets[idx]++;
-            if (buckets[idx] > peak) peak = buckets[idx];
+    _rebuildAllBuckets() {
+        for (const id of Object.keys(this.instruments)) {
+            const inst = this.instruments[id];
+            inst.buckets = new Array(this.bucketCount).fill(0);
+            inst.peak = 0;
+            for (let i = 0; i < inst.hits.length; i++) {
+                const idx = this._getBucketIndex(inst.hits[i]);
+                if (idx === -1) continue;
+                inst.buckets[idx]++;
+                if (inst.buckets[idx] > inst.peak) inst.peak = inst.buckets[idx];
+            }
         }
-        return { buckets, peak };
     }
 
     startRenderLoop() {
@@ -138,8 +159,8 @@ export class VelocityHistogram {
 
             // Build bucket data for each active instrument
             const data = ids.map(id => {
-                const { buckets, peak } = this._buildBuckets(this.instruments[id].hits);
-                return { id, color: this.instruments[id].color, label: this.instruments[id].label, buckets, peak };
+                const inst = this.instruments[id];
+                return { id, color: inst.color, label: inst.label, buckets: inst.buckets, peak: inst.peak };
             });
 
             // Sort descending by peak so the noisiest instrument is drawn first (background)
