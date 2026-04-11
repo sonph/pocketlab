@@ -748,6 +748,11 @@ class PocketLabApp {
             }
         }
 
+        // Apply initial timeline visibility based on loaded mappings
+        if (this.timeline) {
+            this.timeline.setVisibleTracks(this.midi.mappings);
+        }
+
         // Ghost Note Config & Calibration
         const ghostThresh = document.getElementById('hw-ghost-threshold');
         const ghostBtn = document.getElementById('btn-calibrate-ghost');
@@ -856,6 +861,7 @@ class PocketLabApp {
                 this.saveConfig();
             }
             this.renderMappingTable();
+            if (this.timeline) this.timeline.setVisibleTracks(this.midi.mappings);
         };
 
         // Calibration logic
@@ -1170,6 +1176,7 @@ class PocketLabApp {
                         this.saveConfig();
                     }
                     this.renderMappingTable();
+                    if (this.timeline) this.timeline.setVisibleTracks(this.midi.mappings);
                     return;
                 }
 
@@ -1206,6 +1213,7 @@ class PocketLabApp {
                         this.saveConfig();
                     }
                     this.renderMappingTable();
+                    if (this.timeline) this.timeline.setVisibleTracks(this.midi.mappings);
                 }
             });
 
@@ -1357,8 +1365,9 @@ class PocketLabApp {
             'kick': { name: 'Kick', noteIds: [36], color: '#10B981', shape: 'circle' },
             'snare': { name: 'Snare', noteIds: [38], color: '#F59E0B', shape: 'square' },
             'hihat': { name: 'Hi-Hat', noteIds: [42], color: '#38BDF8', shape: 'triangle' },
-            'tom1': { name: 'Tom 1', noteIds: [48], color: '#EF4444', shape: 'circle' },
-            'tom2': { name: 'Tom 2', noteIds: [45], color: '#14B8A6', shape: 'circle' },
+            'tom1': { name: 'Tom 1', noteIds: [48], color: '#F43F5E', shape: 'circle' },
+            'tom2': { name: 'Tom 2', noteIds: [45], color: '#D946EF', shape: 'circle' },
+            'tom3': { name: 'Tom 3', noteIds: [41], color: '#6366F1', shape: 'circle' },
             'ride': { name: 'Ride', noteIds: [51], color: '#8B5CF6', shape: 'diamond' }
         };
         this.renderMappingTable();
@@ -1402,6 +1411,15 @@ class PocketLabApp {
             if (beatNumber16th === 0 || beatNumber16th === 8) notesToPlay.push({ id: 'kick', vel: 110 });
             if (beatNumber16th === 4 || beatNumber16th === 12) notesToPlay.push({ id: 'snare', vel: 125 });
             if (beatNumber16th % 2 === 0) notesToPlay.push({ id: 'hihat', vel: 85 });
+            
+            // Add tom fills on Bar 4
+            const barInLoop = activeBarCounter % 4;
+            if (barInLoop === 3) {
+                if (beatNumber16th === 8) notesToPlay.push({ id: 'tom1', vel: 100 });
+                if (beatNumber16th === 10) notesToPlay.push({ id: 'tom1', vel: 105 });
+                if (beatNumber16th === 12) notesToPlay.push({ id: 'tom2', vel: 110 });
+                if (beatNumber16th === 14) notesToPlay.push({ id: 'tom3', vel: 115 });
+            }
             
             for (let note of notesToPlay) {
                 // Introduce varying note accuracy: bounded random offset

@@ -5,14 +5,9 @@ export class TimelineVisualizer {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
         this.hits = [];
-        this.tracks = ['ride', 'hihat', 'tom1', 'snare', 'tom2', 'kick'];
-        this.width = 0;
-        this.height = 0;
-        this.trackIndexMap = this.tracks.reduce((acc, track, index) => {
-            acc[track] = index;
-            return acc;
-        }, {});
-        this.trackLabels = this.tracks.map(track => track.toUpperCase());
+        this.allPossibleTracks = ['ride', 'hihat', 'tom1', 'snare', 'tom2', 'tom3', 'kick'];
+        this.tracks = [...this.allPossibleTracks];
+        this._rebuildTrackMaps();
         this.staticCanvas = document.createElement('canvas');
         this.staticCtx = this.staticCanvas.getContext('2d');
         this.staticLayoutDirty = true;
@@ -39,6 +34,43 @@ export class TimelineVisualizer {
         this.staticLayoutDirty = true;
         this.needsRender = true;
         // Don't draw immediately if not initialized
+    }
+
+    _rebuildTrackMaps() {
+        this.trackIndexMap = this.tracks.reduce((acc, track, index) => {
+            acc[track] = index;
+            return acc;
+        }, {});
+        this.trackLabels = this.tracks.map(track => {
+            if (track === 'tom1') return 'TOM 1';
+            if (track === 'tom2') return 'TOM 2';
+            if (track === 'tom3') return 'TOM 3';
+            if (track === 'hihat') return 'HI-HAT';
+            return track.toUpperCase();
+        });
+        this.staticLayoutDirty = true;
+        this.needsRender = true;
+    }
+
+    setVisibleTracks(mappings) {
+        const newTracks = this.allPossibleTracks.filter(track => {
+            const config = mappings[track];
+            return config && config.noteIds && config.noteIds.length > 0;
+        });
+
+        // Only rebuild if the track list actually changed
+        if (JSON.stringify(newTracks) !== JSON.stringify(this.tracks)) {
+            this.tracks = newTracks;
+            this._rebuildTrackMaps();
+            
+            // Re-map existing hits to new track indices
+            for (const hit of this.hits) {
+                hit.trackIdx = this.trackIndexMap[hit.instrument];
+            }
+            
+            // Clean up hits that are no longer in visible tracks
+            this.hits = this.hits.filter(hit => hit.trackIdx !== undefined);
+        }
     }
 
     updateConfig(windowBars, bpm, tsCount, tsSubdiv, gridSubdivisions, anchorShift = 0) {

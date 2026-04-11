@@ -41,6 +41,9 @@ export class MidiEngine {
             'kick': { noteIds: [36], shape: 'circle', color: '#10B981', name: 'Kick' },
             'snare': { noteIds: [38], shape: 'square', color: '#F59E0B', name: 'Snare' },
             'hihat': { noteIds: [42], shape: 'triangle', color: '#38BDF8', name: 'Hi-Hat' },
+            'tom1': { noteIds: [48], shape: 'circle', color: '#F43F5E', name: 'Tom 1' },
+            'tom2': { noteIds: [45], shape: 'circle', color: '#D946EF', name: 'Tom 2' },
+            'tom3': { noteIds: [41], shape: 'circle', color: '#6366F1', name: 'Tom 3' },
             'ride': { noteIds: [51], shape: 'square', color: '#8B5CF6', name: 'Ride' }
         };
     }
