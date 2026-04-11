@@ -52,8 +52,9 @@ export class TimelineVisualizer {
         this.needsRender = true;
     }
 
-    setVisibleTracks(mappings) {
+    setVisibleTracks(mappings, mergeRide = false) {
         const newTracks = this.allPossibleTracks.filter(track => {
+            if (mergeRide && track === 'ride') return false;
             const config = mappings[track];
             return config && config.noteIds && config.noteIds.length > 0;
         });

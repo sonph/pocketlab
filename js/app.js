@@ -750,7 +750,8 @@ class PocketLabApp {
 
         // Apply initial timeline visibility based on loaded mappings
         if (this.timeline) {
-            this.timeline.setVisibleTracks(this.midi.mappings);
+            const isMerged = document.getElementById('setting-merge-ride')?.checked || false;
+            this.timeline.setVisibleTracks(this.midi.mappings, isMerged);
         }
 
         // Ghost Note Config & Calibration
@@ -784,6 +785,7 @@ class PocketLabApp {
                     this.saveConfig();
                 }
                 this.renderMappingTable();
+                if (this.timeline) this.timeline.setVisibleTracks(this.midi.mappings, mergeRideChk.checked);
             });
         }
         
@@ -861,7 +863,8 @@ class PocketLabApp {
                 this.saveConfig();
             }
             this.renderMappingTable();
-            if (this.timeline) this.timeline.setVisibleTracks(this.midi.mappings);
+            const isMerged = document.getElementById('setting-merge-ride')?.checked || false;
+            if (this.timeline) this.timeline.setVisibleTracks(this.midi.mappings, isMerged);
         };
 
         // Calibration logic
@@ -912,7 +915,8 @@ class PocketLabApp {
             const isMergedRide = document.getElementById('setting-merge-ride') && document.getElementById('setting-merge-ride').checked;
             if (isMergedRide && hitDetails.instrument === 'ride') {
                 hitDetails.instrument = 'hihat';
-                hitDetails.config = this.midi.mappings['hihat'];
+                // Note: We deliberately keep hitDetails.config as the original Ride config
+                // so that timeline.addHit uses Ride's color and shape even in the Hi-Hat lane.
             }
 
             // Timeline Routing
@@ -1037,8 +1041,8 @@ class PocketLabApp {
                      this.visualizer.addHit(
                          hitDetails.velocity, 
                          offsetMs, 
-                         this.midi.mappings[hitDetails.instrument].color, 
-                         this.midi.mappings[hitDetails.instrument].shape
+                         hitDetails.config.color, 
+                         hitDetails.config.shape
                      );
                  }
                  if (this.histogram) {
@@ -1176,7 +1180,8 @@ class PocketLabApp {
                         this.saveConfig();
                     }
                     this.renderMappingTable();
-                    if (this.timeline) this.timeline.setVisibleTracks(this.midi.mappings);
+                    const isMerged = document.getElementById('setting-merge-ride')?.checked || false;
+                    if (this.timeline) this.timeline.setVisibleTracks(this.midi.mappings, isMerged);
                     return;
                 }
 
@@ -1213,7 +1218,8 @@ class PocketLabApp {
                         this.saveConfig();
                     }
                     this.renderMappingTable();
-                    if (this.timeline) this.timeline.setVisibleTracks(this.midi.mappings);
+                    const isMerged = document.getElementById('setting-merge-ride')?.checked || false;
+                    if (this.timeline) this.timeline.setVisibleTracks(this.midi.mappings, isMerged);
                 }
             });
 
