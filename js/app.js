@@ -140,27 +140,37 @@ class PocketLabApp {
             }
         });
         
-        const updateBpm = (val) => {
+        const updateBpm = (val, skipInputUpdate = false) => {
             let bpm = typeof val === 'string' ? parseInt(val, 10) : val;
             if (isNaN(bpm)) return;
-            if (bpm < 40) bpm = 40;
-            if (bpm > 300) bpm = 300;
             
-            if (bpmInput) bpmInput.value = bpm;
-            if (bpmSlider) bpmSlider.value = bpm;
-            this.metronome.setBpm(bpm);
-            
-            const effectiveBpm = this.metronome.getEffectiveQuarterBpm();
-            if (this.visualizer) this.visualizer.setBpm(effectiveBpm);
-            if (this.histogram) this.histogram.setBpm(effectiveBpm);
-            if (this.limbMatrix) this.limbMatrix.setBpm(effectiveBpm);
-            const winSel = document.getElementById('setting-timeline-window');
-            const gridSel = document.getElementById('setting-timeline-grid');
-            if (this.timeline) this.timeline.updateConfig(winSel ? winSel.value : 2, effectiveBpm, this.metronome.tsCount, this.metronome.tsSubdiv, gridSel ? gridSel.value : 4);
-            
-            if (this.localConfig) {
-                this.localConfig['bpm'] = bpm;
-                this.saveConfig();
+            // Only update the engine and visualizers if the BPM is within valid range
+            if (bpm >= 40 && bpm <= 300) {
+                if (bpmInput && !skipInputUpdate) bpmInput.value = bpm;
+                if (bpmSlider) bpmSlider.value = bpm;
+                this.metronome.setBpm(bpm);
+                
+                const effectiveBpm = this.metronome.getEffectiveQuarterBpm();
+                if (this.visualizer) this.visualizer.setBpm(effectiveBpm);
+                if (this.histogram) this.histogram.setBpm(effectiveBpm);
+                if (this.limbMatrix) this.limbMatrix.setBpm(effectiveBpm);
+                const winSel = document.getElementById('setting-timeline-window');
+                const gridSel = document.getElementById('setting-timeline-grid');
+                if (this.timeline) this.timeline.updateConfig(winSel ? winSel.value : 2, effectiveBpm, this.metronome.tsCount, this.metronome.tsSubdiv, gridSel ? gridSel.value : 4);
+                
+                if (this.localConfig) {
+                    this.localConfig['bpm'] = bpm;
+                    this.saveConfig();
+                }
+            } else {
+                // If out of range, still update the slider to show clamping visually
+                if (bpmSlider) bpmSlider.value = Math.max(40, Math.min(300, bpm));
+                // Do NOT update bpmInput.value if skipInputUpdate is true (user is typing)
+                if (bpmInput && !skipInputUpdate) {
+                    bpmInput.value = Math.max(40, Math.min(300, bpm));
+                    // Re-run with clamped value to ensure engine is in sync
+                    updateBpm(bpmInput.value, false);
+                }
             }
         };
 
@@ -170,7 +180,8 @@ class PocketLabApp {
         }
 
         if (bpmInput) {
-            bpmInput.addEventListener('input', (e) => updateBpm(e.target.value));
+            bpmInput.addEventListener('input', (e) => updateBpm(e.target.value, true));
+            bpmInput.addEventListener('change', (e) => updateBpm(e.target.value, false));
         }
         
         if (bpmSlider) {
