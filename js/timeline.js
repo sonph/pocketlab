@@ -41,12 +41,27 @@ export class TimelineVisualizer {
         // Don't draw immediately if not initialized
     }
 
-    updateConfig(windowBars, bpm, tsCount, tsSubdiv, gridSubdivisions) {
+    updateConfig(windowBars, bpm, tsCount, tsSubdiv, gridSubdivisions, anchorShift = 0) {
         this.windowBars = parseInt(windowBars) || 2;
         this.bpm = bpm || 120;
         this.tsCount = tsCount || 4;
         this.tsSubdiv = tsSubdiv || 4;
         this.gridSubdivs = parseInt(gridSubdivisions) || 4;
+
+        if (anchorShift !== 0 || true) { // Always recalculate hitX/windowIndex on config change
+            const quartersPerBar = this.tsCount * (4.0 / this.tsSubdiv);
+            const secondsPerBar = (60.0 / this.bpm) * quartersPerBar;
+            const windowDuration = secondsPerBar * this.windowBars;
+
+            for (const hit of this.hits) {
+                if (anchorShift !== 0) {
+                    hit.elapsedSecs -= anchorShift;
+                }
+                hit.windowIndex = Math.floor(hit.elapsedSecs / windowDuration);
+                hit.hitX = (hit.elapsedSecs % windowDuration) / windowDuration;
+            }
+        }
+
         this.staticLayoutDirty = true;
         this.needsRender = true;
     }
@@ -69,6 +84,7 @@ export class TimelineVisualizer {
             velocity,
             hitX,
             windowIndex,
+            elapsedSecs,
             trackIdx,
             color,
             shape

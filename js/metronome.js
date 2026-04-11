@@ -199,8 +199,48 @@ export class Metronome {
 
     setBpm(newBpm) {
         if (!isNaN(newBpm) && newBpm >= 40 && newBpm <= 300) {
+            if (!this.audioContext) {
+                this.bpm = newBpm;
+                return 0;
+            }
+
+            const oldEffectiveBpm = this.getEffectiveQuarterBpm();
+            const oldSecondsPerQuarter = 60.0 / oldEffectiveBpm;
+            
+            const prevBpm = this.bpm;
             this.bpm = newBpm;
+            
+            const newEffectiveBpm = this.getEffectiveQuarterBpm();
+            const newSecondsPerQuarter = 60.0 / newEffectiveBpm;
+            
+            let anchorShift = 0;
+            if (this.sessionStartTime) {
+                const now = this.audioContext.currentTime;
+                
+                // Musical progress in quarters since the session start
+                const progressQuarters = (now - this.sessionStartTime) / oldSecondsPerQuarter;
+                
+                // Where we SHOULD be in new timeline
+                const newElapsed = progressQuarters * newSecondsPerQuarter;
+                
+                const oldSessionStartTime = this.sessionStartTime;
+                this.sessionStartTime = now - newElapsed;
+                anchorShift = this.sessionStartTime - oldSessionStartTime;
+                
+                // Adjust future scheduling to maintain musical alignment
+                if (this.nextNoteTime) {
+                    const quartersToNext = (this.nextNoteTime - oldSessionStartTime) / oldSecondsPerQuarter;
+                    this.nextNoteTime = this.sessionStartTime + (quartersToNext * newSecondsPerQuarter);
+                }
+                
+                if (this.pausedAtTime) {
+                    const pausedProgressQuarters = (this.pausedAtTime - oldSessionStartTime) / oldSecondsPerQuarter;
+                    this.pausedAtTime = this.sessionStartTime + (pausedProgressQuarters * newSecondsPerQuarter);
+                }
+            }
+            return anchorShift;
         }
+        return 0;
     }
 
     getEffectiveQuarterBpm() {

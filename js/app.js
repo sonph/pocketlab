@@ -148,7 +148,7 @@ class PocketLabApp {
             if (bpm >= 40 && bpm <= 300) {
                 if (bpmInput && !skipInputUpdate) bpmInput.value = bpm;
                 if (bpmSlider) bpmSlider.value = bpm;
-                this.metronome.setBpm(bpm);
+                const anchorShift = this.metronome.setBpm(bpm);
                 
                 const effectiveBpm = this.metronome.getEffectiveQuarterBpm();
                 if (this.visualizer) this.visualizer.setBpm(effectiveBpm);
@@ -156,7 +156,7 @@ class PocketLabApp {
                 if (this.limbMatrix) this.limbMatrix.setBpm(effectiveBpm);
                 const winSel = document.getElementById('setting-timeline-window');
                 const gridSel = document.getElementById('setting-timeline-grid');
-                if (this.timeline) this.timeline.updateConfig(winSel ? winSel.value : 2, effectiveBpm, this.metronome.tsCount, this.metronome.tsSubdiv, gridSel ? gridSel.value : 4);
+                if (this.timeline) this.timeline.updateConfig(winSel ? winSel.value : 2, effectiveBpm, this.metronome.tsCount, this.metronome.tsSubdiv, gridSel ? gridSel.value : 4, anchorShift);
                 
                 if (this.localConfig) {
                     this.localConfig['bpm'] = bpm;
