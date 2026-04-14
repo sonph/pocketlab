@@ -6,7 +6,7 @@ export class Metronome {
         // General Settings
         this.bpm = 120;
         this.lookahead = 25.0; // ms
-        this.scheduleAheadTime = 0.1; // sec
+        this.scheduleAheadTime = 0.2; // sec
         
         this.bpmPulse = 4; // 4 for quarter, 8 for eighth
 
@@ -430,7 +430,7 @@ export class Metronome {
 
         // Always alert engine mapping logic even if muted (Gap Radio), and include subdivisions
         if (this.onNoteScheduled && (playMainBeat || (!isCountInPhase && subVoiceVol > 0.0))) {
-            this.onNoteScheduled({ time: scheduledTime, isDownbeat, beatIndex });
+            this.onNoteScheduled({ time: scheduledTime, isDownbeat, beatIndex, isMainBeat: playMainBeat });
         }
     }
 

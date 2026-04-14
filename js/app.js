@@ -4,7 +4,7 @@ import { Visualizer } from './visualizer.js';
 import { Histogram } from './histogram.js';
 import { TimelineVisualizer } from './timeline.js';
 import { LimbMatrixVisualizer } from './limbMatrix.js';
-import { calculateTimingScore, selectFlamCandidate, evaluateFeedbackResult, selectFeedbackCue, findClosestExpectedHit } from './scoring.js';
+import { calculateTimingScore, evaluateFeedbackResult, selectFeedbackCue, findClosestExpectedHit } from './scoring.js';
 import { VelocityHistogram } from './velocityHistogram.js';
 
 /**
@@ -32,7 +32,6 @@ class PocketLabApp {
         this.sessionRollingBars = [];
         this.sessionRollingScoreSum = 0;
         this.sessionRollingScoreCount = 0;
-        this.pendingSnareHit = null; // Buffer for flam detection: { targetTime, offsetMs, velocity }
         this.scoreDisplay = document.getElementById('score-display');
         this.logBuffer = [];
         this.logFlushScheduled = false;
@@ -88,7 +87,6 @@ class PocketLabApp {
                 playBtn.classList.remove('is-live');
                 
                 this.expectedHits = [];
-                this.pendingSnareHit = null;
                 this.lastEvaluatedFeedbackTarget = -1;
                 this._resetRollingScoreWindow();
                 if (this.scoreDisplay) this.scoreDisplay.textContent = '--% AVG (8 BARS)';
@@ -1011,51 +1009,25 @@ class PocketLabApp {
             let isEvaluatingFeedback = false;
             
             if (this.feedbackTriggerMode === 'snare') {
-                if (hitDetails.instrument === 'snare') isEvaluatingFeedback = true;
+                if (hitDetails.instrument === 'snare' && closestHit.isMainBeat) isEvaluatingFeedback = true;
             } else if (this.feedbackTriggerMode === 'kick') {
-                if (hitDetails.instrument === 'kick') isEvaluatingFeedback = true;
+                if (hitDetails.instrument === 'kick' && closestHit.isMainBeat) isEvaluatingFeedback = true;
             } else if (this.feedbackTriggerMode === 'snare-kick') {
-                if (hitDetails.instrument === 'kick' && (closestHit.beatIndex === 0 || closestHit.beatIndex === 2)) isEvaluatingFeedback = true;
-                if (hitDetails.instrument === 'snare' && (closestHit.beatIndex === 1 || closestHit.beatIndex === 3)) isEvaluatingFeedback = true;
+                if (hitDetails.instrument === 'kick' && closestHit.isMainBeat && (closestHit.beatIndex === 0 || closestHit.beatIndex === 2)) isEvaluatingFeedback = true;
+                if (hitDetails.instrument === 'snare' && closestHit.isMainBeat && (closestHit.beatIndex === 1 || closestHit.beatIndex === 3)) isEvaluatingFeedback = true;
             }
 
             if (isEvaluatingFeedback) {
-                if (hitDetails.instrument === 'snare') {
-                    // Flam detection: buffer snare hits and keep the loudest one per target
-                    if (!this.pendingSnareHit || this.pendingSnareHit.targetTime !== closestHit.time) {
-                        // Flush any previous pending snare against a different target
-                        if (this.pendingSnareHit) {
-                            this._evaluateFeedbackTiming(this.pendingSnareHit.offsetMs);
-                        }
-                        // Start a new buffer for this target
-                        this.pendingSnareHit = { targetTime: closestHit.time, offsetMs, velocity: hitDetails.velocity };
-                    } else {
-                        // Same target — use selectFlamCandidate to pick the louder hit
-                        const winner = selectFlamCandidate([
-                            this.pendingSnareHit,
-                            { offsetMs, velocity: hitDetails.velocity }
-                        ]);
-                        this.pendingSnareHit.offsetMs = winner.offsetMs;
-                        this.pendingSnareHit.velocity = winner.velocity;
-                        // Do NOT evaluate yet; wait to see if another hit still comes in
-                    }
-                } else {
-                    // Non-snare instrument: flush any pending snare first, then evaluate this hit
-                    if (this.pendingSnareHit) {
-                        this._evaluateFeedbackTiming(this.pendingSnareHit.offsetMs);
-                        this.pendingSnareHit = null;
-                    }
-                    if (closestHit.time !== this.lastEvaluatedFeedbackTarget) {
-                        this.lastEvaluatedFeedbackTarget = closestHit.time;
-                        this._evaluateFeedbackTiming(offsetMs);
-                    }
+                if (closestHit.time !== this.lastEvaluatedFeedbackTarget) {
+                    console.log(`[Feedback] Triggering for ${hitDetails.instrument} | Target: ${closestHit.time.toFixed(3)} | Index: ${closestHit.beatIndex} | Offset: ${offsetMs.toFixed(1)}ms`);
+                    this.lastEvaluatedFeedbackTarget = closestHit.time;
+                    this._evaluateFeedbackTiming(offsetMs);
                 }
-            } else if (this.pendingSnareHit) {
-                // Non-snare, non-feedback hit — flush pending snare if we've moved past its window
-                const pendingPerf = expectedHitPerfTime(this.pendingSnareHit.targetTime);
-                if (Math.abs(performance.now() - pendingPerf) > 300) {
-                    this._evaluateFeedbackTiming(this.pendingSnareHit.offsetMs);
-                    this.pendingSnareHit = null;
+            } else {
+                // Diagnostic: why was it ignored?
+                if (this.visualizer && Math.abs(offsetMs) < 200) {
+                    const reason = !closestHit.isMainBeat ? 'Subdivision' : `Wrong Index (${closestHit.beatIndex})`;
+                    console.log(`[Feedback Ignore] ${hitDetails.instrument} matched ${closestHit.time.toFixed(3)} but rejected: ${reason}`);
                 }
             }
             
@@ -1390,7 +1362,11 @@ class PocketLabApp {
              // Since gap radio mutes audio, but the structure exists. We'll track the scheduleObj.time.
              
              // Queue management
-             this.expectedHits.push({ time: scheduleObj.time, beatIndex: scheduleObj.beatIndex });
+             this.expectedHits.push({ 
+                 time: scheduleObj.time, 
+                 beatIndex: scheduleObj.beatIndex,
+                 isMainBeat: scheduleObj.isMainBeat 
+             });
 
              // Clear out old expectations to prevent memory leak
              const nowAudio = this.metronome.audioContext.currentTime;

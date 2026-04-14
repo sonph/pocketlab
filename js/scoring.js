@@ -43,18 +43,6 @@ export function calculateBpmFromDeltas(deltasMs) {
     return 60000.0 / (avgDelta * 24);
 }
 
-/**
- * Selects the primary (loudest) hit from a list of snare candidates landing on the same beat target.
- * Used for flam detection: when two snare hits arrive within the evaluation window of a single target,
- * we evaluate the one with the higher velocity (the main stroke) rather than the ghost/flam grace note.
- *
- * @param {{ offsetMs: number, velocity: number }[]} candidates - Array of candidate snare hits.
- * @returns {{ offsetMs: number, velocity: number } | null} The selected candidate, or null for empty input.
- */
-export function selectFlamCandidate(candidates) {
-    if (!candidates || candidates.length === 0) return null;
-    return candidates.reduce((best, hit) => hit.velocity > best.velocity ? hit : best, candidates[0]);
-}
 
 /**
  * Evaluates the result of a hit for the audible feedback engine.
