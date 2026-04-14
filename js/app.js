@@ -620,7 +620,10 @@ class PocketLabApp {
                 const isRunning = this.metronome.isPlaying && this.metronome.sessionStartTime && this.metronome.currentBarTotal >= this.metronome.countInBars && this.metronome.resumeCountInBarsLeft <= 0;
                 let activeSecs = -1;
                 
-                if (this.metronome.sessionStartTime) {
+                if (this.midiSyncEnabled) {
+                    // Drive playhead by current tick count
+                    activeSecs = (this.midi.clockTickCount / 24) * (60 / this.metronome.bpm);
+                } else if (this.metronome.sessionStartTime) {
                     if (this.metronome.pausedAtTime) {
                         // Locked to snapshot during pause or pseudo-count-in
                         activeSecs = this.metronome.pausedAtTime - this.metronome.sessionStartTime;
@@ -643,6 +646,12 @@ class PocketLabApp {
         const btnSetup = document.getElementById('btn-hardware-setup');
         const modal = document.getElementById('modal-hardware');
         const btnClose = document.getElementById('btn-close-modal');
+        const btnRescan = document.getElementById('btn-rescan-midi');
+        
+        // 0. Locate critical elements for early logging/status
+        this.hwConsoleEl = document.getElementById('hw-console');
+        const statusEl = document.getElementById('midi-status');
+        const deviceListEl = document.getElementById('midi-device-list');
         
         // Tabs
         const tabSetup = document.getElementById('tab-btn-setup');
@@ -652,6 +661,28 @@ class PocketLabApp {
         const viewSetup = document.getElementById('view-setup');
         const viewTroubleshoot = document.getElementById('view-troubleshoot');
         const viewAdvanced = document.getElementById('view-advanced');
+        
+        // 1. Establish core callbacks immediately
+        this.midi.onMidiLog = (msg, isPriority = false) => {
+            if (isPriority || this.midi.isLoggingEnabled) {
+                this._queueMidiLog(msg);
+            }
+        };
+
+        this.midi.onDevicesChanged = (inputs) => {
+            console.log(`[Debug] onDevicesChanged triggered. Inputs found: ${inputs.length}`);
+            this.renderDeviceList(inputs);
+            const currentStatusEl = document.getElementById('midi-status');
+            if (currentStatusEl) {
+                if (inputs.length > 0) {
+                    currentStatusEl.textContent = `Connected! Listening to ${inputs.length} devices.`;
+                    currentStatusEl.style.color = 'var(--color-success)';
+                } else {
+                    currentStatusEl.textContent = `Initialized, but no MIDI inputs detected. Please connect a device via USB/Bluetooth.`;
+                    currentStatusEl.style.color = 'var(--color-warning)';
+                }
+            }
+        };
         
         const syncLoggingState = () => {
             if (modal.open && viewTroubleshoot.style.display !== 'none') {
@@ -710,6 +741,13 @@ class PocketLabApp {
             btnSetup.addEventListener('click', () => {
                 modal.showModal();
                 syncLoggingState();
+                // 2. Trigger fresh search when opening the modal
+                this.midi.refreshInputs();
+            });
+        }
+        if (btnRescan) {
+            btnRescan.addEventListener('click', () => {
+                this.midi.refreshInputs();
             });
         }
         if (btnClose && modal) {
@@ -719,21 +757,7 @@ class PocketLabApp {
             });
         }
         
-        // Init Engine
-        const success = await this.midi.init();
-        const statusEl = document.getElementById('midi-status');
-        if (statusEl) {
-            if (success && this.midi.inputs.length > 0) {
-                statusEl.textContent = `Connected! Listening to ${this.midi.inputs.length} devices.`;
-                statusEl.style.color = 'var(--color-success)';
-            } else if (success) {
-                statusEl.textContent = `Initialized, but no MIDI inputs detected. Please connect a device via USB/Bluetooth.`;
-                statusEl.style.color = 'var(--color-warning)';
-            } else {
-                statusEl.textContent = `Error: Web MIDI Access Denied or Not Supported.`;
-                statusEl.style.color = 'var(--color-critical)';
-            }
-        }
+        // MIDI Initialization will happen at the end of setupMidi
 
         // Load localized MIDI configuration if available
         if (this.localConfig) {
@@ -797,6 +821,10 @@ class PocketLabApp {
             }
             midiSyncChk.addEventListener('change', () => {
                 this.midiSyncEnabled = midiSyncChk.checked;
+                if (!this.midiSyncEnabled) {
+                    this.midi.activeSyncSession = false;
+                }
+                this.updateSyncUI();
                 if (this.localConfig) {
                     this.localConfig.midiSync = midiSyncChk.checked;
                     this.saveConfig();
@@ -920,15 +948,22 @@ class PocketLabApp {
             }
 
             // Timeline Routing
-            if (this.timeline && this.metronome.isPlaying && this.metronome.sessionStartTime) {
-                const elapsedCtx = this.metronome.audioContext.currentTime - this.metronome.sessionStartTime;
-                if (elapsedCtx >= 0) {
+            if (this.timeline && this.metronome.isPlaying) {
+                let elapsed;
+                if (this.midiSyncEnabled) {
+                    // Drive timeline exactly by MIDI clock ticks
+                    elapsed = (this.midi.clockTickCount / 24) * (60 / this.metronome.bpm);
+                } else {
+                    elapsed = this.metronome.sessionStartTime ? (this.metronome.audioContext.currentTime - this.metronome.sessionStartTime) : 0;
+                }
+
+                if (elapsed >= 0) {
                     this.timeline.addHit(
                         hitDetails.instrument,
                         hitDetails.velocity,
                         hitDetails.config.color,
                         hitDetails.config.shape,
-                        elapsedCtx
+                        elapsed
                     );
                 }
             }
@@ -1055,7 +1090,7 @@ class PocketLabApp {
         const levelSel = document.getElementById('log-level-filter');
         const btnClearLog = document.getElementById('btn-clear-log');
         const hwConsole = document.getElementById('hw-console');
-        this.hwConsoleEl = hwConsole;
+        // this.hwConsoleEl already set at top
 
         if (levelSel) {
             if (this.localConfig && this.localConfig.logLevel !== undefined) {
@@ -1078,31 +1113,89 @@ class PocketLabApp {
             });
         }
 
-        this.midi.onMidiLog = (msg) => {
-            this._queueMidiLog(msg);
-        };
+        // onMidiLog moved to top of setupMidi
         
         // --- Master Clock Listeners ---
         const playBtnNode = document.getElementById('play-btn');
         this.midi.onMidiStart = () => {
             if (this.midiSyncEnabled && !this.metronome.isPlaying) {
                 this.midi.activeSyncSession = true;
+                this.updateSyncUI();
                 if (playBtnNode) playBtnNode.click();
             }
         };
         this.midi.onMidiStop = () => {
             if (this.midiSyncEnabled && this.metronome.isPlaying) {
                 this.midi.activeSyncSession = false;
+                this.updateSyncUI();
                 if (playBtnNode) playBtnNode.click();
             }
         };
         this.midi.onMidiTempo = (newBpm) => {
             if (this.midiSyncEnabled) {
+                this.midi.activeSyncSession = true;
+                this.updateSyncUI();
                 // Programmatically trigger updateBpm scope
                 const ev = new CustomEvent('force-bpm', { detail: newBpm });
                 document.dispatchEvent(ev);
             }
         };
+
+        this.midi.onMidiBeat = (beatIndex) => {
+            const beatLamp = document.getElementById('midi-heartbeat');
+            if (beatLamp) {
+                beatLamp.classList.remove('heartbeat-active');
+                void beatLamp.offsetWidth; // Trigger reflow
+                beatLamp.classList.add('heartbeat-active');
+            }
+        };
+
+        this.midi.onSyncChanged = () => {
+            this.updateSyncUI();
+        };
+
+        this.updateSyncUI();
+
+        // 3. Final Engine Initialization
+        const bootStatusEl = document.getElementById('midi-status');
+        if (bootStatusEl) {
+            bootStatusEl.textContent = 'Searching for MIDI devices...';
+        }
+
+        const success = await this.midi.init();
+        const finalStatusEl = document.getElementById('midi-status');
+        if (!success && finalStatusEl) {
+            finalStatusEl.textContent = `Error: Web MIDI Access Denied or Not Supported.`;
+            finalStatusEl.style.color = 'var(--color-critical)';
+        }
+    }
+
+    updateSyncUI() {
+        const syncStatus = document.getElementById('midi-sync-status');
+        const bpmInput = document.getElementById('bpm-input');
+        const bpmPulse = document.getElementById('bpm-pulse');
+        const stepBtns = document.querySelectorAll('.bpm-step');
+        
+        const isSynced = this.midiSyncEnabled && this.midi.activeSyncSession;
+        
+        if (syncStatus) {
+            syncStatus.style.display = isSynced ? 'inline-block' : 'none';
+        }
+        
+        if (bpmInput) {
+            bpmInput.style.opacity = isSynced ? '0.5' : '1';
+            bpmInput.disabled = isSynced;
+        }
+
+        if (bpmPulse) {
+            bpmPulse.style.opacity = isSynced ? '0.5' : '1';
+            bpmPulse.disabled = isSynced;
+        }
+        
+        stepBtns.forEach(btn => {
+            btn.style.opacity = isSynced ? '0.3' : '1';
+            btn.style.pointerEvents = isSynced ? 'none' : 'auto';
+        });
     }
 
     _evaluateFeedbackTiming(offsetMs) {
@@ -1340,7 +1433,11 @@ class PocketLabApp {
     }
 
     _queueMidiLog(msg) {
+        if (!this.hwConsoleEl) {
+            this.hwConsoleEl = document.getElementById('hw-console');
+        }
         if (!this.hwConsoleEl) return;
+        
         this.logBuffer.push(msg);
         if (this.logFlushScheduled) return;
         this.logFlushScheduled = true;
@@ -1453,6 +1550,64 @@ class PocketLabApp {
                 }
             }
         };
+    }
+
+    renderDeviceList(inputs) {
+        console.log("[Debug] renderDeviceList called with inputs:", inputs);
+        const listEl = document.getElementById('midi-device-list');
+        if (!listEl) return;
+        
+        listEl.innerHTML = '';
+        
+        if (inputs.length === 0) {
+            listEl.innerHTML = '<div style="padding: 1rem; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.1); border-radius: 4px; color: var(--color-text-muted); font-size: 0.85rem;">No MIDI input devices detected. If you just connected a device, try clicking the button below or reloading.</div>';
+            return;
+        }
+
+        inputs.forEach(input => {
+            const deviceDiv = document.createElement('div');
+            deviceDiv.style.background = 'rgba(255,255,255,0.05)';
+            deviceDiv.style.border = '1px solid rgba(255,255,255,0.1)';
+            deviceDiv.style.padding = '0.5rem 0.8rem';
+            deviceDiv.style.borderRadius = '4px';
+            deviceDiv.style.display = 'flex';
+            deviceDiv.style.alignItems = 'center';
+            deviceDiv.style.gap = '0.8rem';
+            deviceDiv.style.fontSize = '0.85rem';
+
+            const icon = document.createElement('span');
+            icon.style.fontSize = '1.2rem';
+            icon.textContent = '🎹';
+            
+            const info = document.createElement('div');
+            info.style.flex = '1';
+            
+            const name = document.createElement('div');
+            name.style.fontWeight = 'bold';
+            name.style.color = 'var(--color-primary-accent)';
+            name.textContent = input.name;
+            
+            const manufacturer = document.createElement('div');
+            manufacturer.style.fontSize = '0.75rem';
+            manufacturer.style.color = 'rgba(255,255,255,0.4)';
+            manufacturer.textContent = input.manufacturer || 'Generic MIDI Device';
+            
+            const status = document.createElement('div');
+            status.style.fontSize = '0.7rem';
+            status.style.padding = '0.1rem 0.4rem';
+            status.style.borderRadius = '3px';
+            status.style.background = 'rgba(16, 185, 129, 0.2)';
+            status.style.color = '#10B981';
+            status.style.fontWeight = 'bold';
+            status.textContent = 'ACTIVE';
+
+            info.appendChild(name);
+            info.appendChild(manufacturer);
+            deviceDiv.appendChild(icon);
+            deviceDiv.appendChild(info);
+            deviceDiv.appendChild(status);
+            listEl.appendChild(deviceDiv);
+        });
     }
 }
 

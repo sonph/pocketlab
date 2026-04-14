@@ -31,8 +31,13 @@ export class MidiEngine {
         this.onMidiStart = null;
         this.onMidiStop = null;
         this.onMidiTempo = null;
-
-        // Logging state
+        this.onMidiTick = null;  // (tickCount)
+        this.onMidiBeat = null;  // (beatIndex)
+        this.activeSyncSession = false;
+        this.hasReceivedClock = false;
+        this.clockTickCount = 0;
+        this.onDevicesChanged = null; // (inputsArray) => {}
+        this.connectedDeviceIds = new Set();
         this.isLoggingEnabled = false;
         this.logLevel = 1; // 1: Note On, 2: MIDI Events, 3: Everything
 
@@ -51,8 +56,10 @@ export class MidiEngine {
     async init() {
         try {
             this.midiAccess = await navigator.requestMIDIAccess();
+            if (this.onMidiLog) this.onMidiLog("[System] Web MIDI API Access granted.", true);
             this.midiAccess.onstatechange = this.refreshInputs.bind(this);
             this.refreshInputs();
+            if (this.onMidiLog) this.onMidiLog(`[System] MIDI Initialization complete. Found ${this.inputs.length} input(s).`, true);
             return true;
         } catch (e) {
             console.warn("Web MIDI not supported or denied by user.", e);
@@ -61,11 +68,34 @@ export class MidiEngine {
     }
 
     refreshInputs() {
-        this.inputs = [];
         if (!this.midiAccess) return;
-        for (const input of this.midiAccess.inputs.values()) {
-            input.onmidimessage = this.handleMidiMessage.bind(this);
-            this.inputs.push(input);
+        
+        const currentInputIds = new Set();
+        const newInputs = [];
+        
+        for (const input of Array.from(this.midiAccess.inputs.values())) {
+            currentInputIds.add(input.id);
+            newInputs.push(input);
+            
+            if (!this.connectedDeviceIds.has(input.id)) {
+                if (this.onMidiLog) this.onMidiLog(`[System] MIDI Device Connected: ${input.name} (${input.manufacturer || 'Generic'})`, true);
+                input.onmidimessage = this.handleMidiMessage.bind(this);
+            }
+        }
+        
+        // Detect removals
+        for (const oldId of this.connectedDeviceIds) {
+            if (!currentInputIds.has(oldId)) {
+                // Find name from previous state if possible, though state is transient
+                if (this.onMidiLog) this.onMidiLog(`[System] MIDI Device Disconnected (ID: ${oldId})`, true);
+            }
+        }
+        
+        this.inputs = newInputs;
+        this.connectedDeviceIds = currentInputIds;
+
+        if (this.onDevicesChanged) {
+            this.onDevicesChanged(this.inputs);
         }
     }
 
@@ -76,7 +106,8 @@ export class MidiEngine {
         const rawStatus = event.data[0];
 
         // --- Master Clock Listeners ---
-        if (rawStatus === 250) { // 0xFA Start
+        if (rawStatus === 250 || rawStatus === 251) { // 0xFA Start or 0xFB Continue
+            this.clockTickCount = 0;
             if (this.onMidiStart) this.onMidiStart();
             return;
         }
@@ -86,7 +117,28 @@ export class MidiEngine {
         }
         if (rawStatus === 248) { // 0xF8 Timing Clock
             const now = performance.now();
+            
+            // Watchdog to clear sync status if clock stops
+            if (this.clockWatchdog) clearTimeout(this.clockWatchdog);
+            this.clockWatchdog = setTimeout(() => {
+                this.activeSyncSession = false;
+                this.hasReceivedClock = false;
+                if (this.onSyncChanged) this.onSyncChanged(false);
+                if (this.onMidiLog) this.onMidiLog(`[System] Master Clock signal lost. Synchronization suspended.`, true);
+            }, 1000);
+
+            if (!this.hasReceivedClock) {
+                this.hasReceivedClock = true;
+                if (this.onMidiLog) this.onMidiLog(`[System] Master Clock signal detected. Tracking external tempo...`, true);
+            }
+
             if (this.lastClockTime > 0) {
+                this.clockTickCount++;
+                if (this.onMidiTick) this.onMidiTick(this.clockTickCount);
+                if (this.clockTickCount % 24 === 1) { // Pulse on the first tick of every beat
+                    if (this.onMidiBeat) this.onMidiBeat(Math.floor(this.clockTickCount / 24));
+                }
+
                 const delta = now - this.lastClockTime;
                 this.clockDeltas.push(delta);
                 if (this.clockDeltas.length > 24) { // Keep rolling window of 1 beat
@@ -145,7 +197,7 @@ export class MidiEngine {
             }
 
             if (shouldLog) {
-                this.onMidiLog(`[${timeStr}] ${logMsg}`);
+                this.onMidiLog(`[${timeStr}] ${logMsg}`, false);
             }
         }
 
@@ -165,8 +217,8 @@ export class MidiEngine {
 
             // 1. Ghost Note Velocity Filter
             if (velocity < this.ghostThreshold) {
-                if (this.isLoggingEnabled && this.onMidiLog && this.logLevel >= 1) {
-                    this.onMidiLog(`   -> Dropped by Ghost Filter (Vel < ${this.ghostThreshold})`);
+                if (this.onMidiLog) {
+                    this.onMidiLog(`[System] Hit dropped by Ghost Filter (Vel: ${velocity} < Threshold: ${this.ghostThreshold})`, false);
                 }
                 return;
             }

@@ -1,4 +1,5 @@
 import { Metronome } from '../js/metronome.js';
+import { runMidiTests } from './midi.test.js';
 
 const output = document.getElementById('test-output');
 const progress = document.getElementById('test-progress');
@@ -66,4 +67,6 @@ export function runMetronomeTests() {
     } else {
         progress.style.color = '#f87171';
     }
+    
+    runMidiTests();
 }
