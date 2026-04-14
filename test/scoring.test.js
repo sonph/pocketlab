@@ -84,7 +84,7 @@ try {
     output.innerHTML += `Running Feedback Evaluation tests...\n`;
 
     // At 120bpm, 32nd note window is ±62.5ms
-    // Medium difficulty (diffFactor 0.5) -> Good zone is ±31.25ms
+    // Medium difficulty (diffFactor 0.4) -> Good zone is ±25ms
 
     assertStrictEqual(
         'Perfect hit (0ms) is in-zone',
@@ -130,10 +130,16 @@ try {
         'too-slow'
     );
 
-    // Easy (diffFactor 0.8) -> Good zone is ±50ms
+    // Easy (diffFactor 0.6) -> Good zone is ±37.5ms
     assertStrictEqual(
-        '40ms offset is in-zone on EASY difficulty',
+        '40ms offset is now TOO-SLOW on EASY difficulty',
         evaluateFeedbackResult(40, 120, 'easy'),
+        'too-slow'
+    );
+
+    assertStrictEqual(
+        '30ms offset is in-zone on EASY difficulty',
+        evaluateFeedbackResult(30, 120, 'easy'),
         'in-zone'
     );
 

@@ -150,8 +150,8 @@ export class Visualizer {
             const centerX = this.width / 2;
             
             // Calculate Good/Perfect Zone width based on difficulty
-            let diffFactor = 0.5;
-            if (this.difficultyMode === 'easy') diffFactor = 0.8;
+            let diffFactor = 0.4;
+            if (this.difficultyMode === 'easy') diffFactor = 0.6;
             else if (this.difficultyMode === 'hard') diffFactor = 0.2;
             const goodZoneMs = (60000 / this.bpm) / 8.0 * diffFactor;
             const goodZonePixels = (goodZoneMs / this.currentMaxTiming) * (this.width / 2);

@@ -56,8 +56,8 @@ export function evaluateFeedbackResult(offsetMs, bpm, difficultyMode) {
     const offsetSecs = offsetMs / 1000.0;
     const thirtySecondSecs = (60.0 / bpm) / 8.0;
 
-    let diffFactor = 0.5;
-    if (difficultyMode === 'easy') diffFactor = 0.8;
+    let diffFactor = 0.4;
+    if (difficultyMode === 'easy') diffFactor = 0.6;
     else if (difficultyMode === 'hard') diffFactor = 0.2;
 
     if (Math.abs(offsetSecs) > thirtySecondSecs) {
