@@ -28,63 +28,69 @@
     <div id="app">
         <!-- Top Horizontal Dashboard -->
         <div id="top-bar" class="glass-panel"
-            style="position: relative; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; z-index: 10;">
+            style="position: relative; display: flex; flex-direction: column; gap: 1rem; z-index: 10;">
 
-            <!-- Execution Controls -->
-            <div style="display: flex; align-items: center; gap: 1.5rem;">
-                <button id="play-btn" class="btn-primary"
-                    data-help="Click Start to initiate your live coaching session. The master clock and bar counter will track your progress.">Start</button>
-                <button id="reset-btn" class="btn-secondary" style="font-weight: bold; border: 1px solid rgba(255,255,255,0.2);">Reset</button>
-                <div style="display: flex; gap: 1rem; align-items: baseline;">
-                    <span id="timer-display" data-help="Session Duration." class="numeric-data"
-                        style="font-size: 1.2rem;">0:00</span>
-                    <span id="bar-display" data-help="Current measure count in the active session." class="numeric-data"
-                        style="font-size: 1.2rem; color: var(--color-primary-accent);">BAR 1</span>
-                    <div
-                        style="width: 1px; height: 1.2rem; background: rgba(255,255,255,0.2); align-self: center; margin: 0 0.5rem;">
+            <!-- Row 1 -->
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                <!-- Execution Controls -->
+                <div style="display: flex; align-items: center; gap: 1.5rem;">
+                    <button id="play-btn" class="btn-primary"
+                        style="font-size: 0.95rem; padding: 0.45rem 1.2rem;"
+                        data-help="Click Start to initiate your live coaching session. The master clock and bar counter will track your progress.">Start</button>
+                    <button id="reset-btn" class="btn-secondary">Reset</button>
+                    <div style="display: flex; gap: 1rem; align-items: baseline;">
+                        <span id="timer-display" data-help="Session Duration." class="numeric-data"
+                            style="font-size: 1rem; font-weight: bold;">0:00</span>
+                        <span id="bar-display" data-help="Current measure count in the active session." class="numeric-data"
+                            style="font-size: 1rem; font-weight: bold; color: var(--color-primary-accent);">BAR 1</span>
+                        <div
+                            style="width: 1px; height: 1rem; background: rgba(255,255,255,0.2); align-self: center; margin: 0 0.5rem;">
+                        </div>
+                        <span id="score-display" data-help="Live Average Timing Score evaluated over the current window." class="numeric-data"
+                            style="font-size: 1rem; font-weight: bold; color: var(--color-warning);">--% AVG (8 BARS)</span>
                     </div>
-                    <span id="score-display" data-help="Live Average Timing Score evaluated over the current window." class="numeric-data"
-                        style="font-size: 1.2rem; font-weight: bold; color: var(--color-warning);">--% AVG (8 BARS)</span>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button id="btn-toggle-challenges" class="btn-secondary"
+                        data-help="Opens the drop-down menu for advanced options.">More Options ▽</button>
+                    <button id="btn-hardware-setup"
+                        data-help="Configure MIDI ports, map custom electronic drum triggers, and calibrate system latency."
+                        style="padding: 0.4rem 0.8rem; cursor: pointer; border-radius: 4px; background: rgba(56, 189, 248, 0.2); color: var(--color-primary-accent); border: 1px solid var(--color-primary-accent); font-weight: bold;">⚙️ Setup</button>
                 </div>
             </div>
 
-            <!-- BPM Tuner Engine -->
-            <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: var(--border-radius-md); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);"
-                data-help="Main Tempo (Beats Per Minute). Use the quick-step buttons for rapid tuning.">
-                <span style="font-weight: 800; color: var(--color-text-muted); padding-left: 0.5rem; letter-spacing: 1px;">BPM</span>
-                <select id="bpm-pulse" title="BPM Pulse" style="background: transparent; color: white; border: none; font-size: 0.9em; outline: none; appearance: auto; -webkit-appearance: auto; padding: 0; cursor: pointer;">
-                    <option value="4" style="color: black;" selected>Quarter</option>
-                    <option value="8" style="color: black;">Eighth</option>
-                </select>
-                <button class="btn-secondary bpm-step" data-step="-10">-10</button>
-                <button class="btn-secondary bpm-step" data-step="-5">-5</button>
-                <button class="btn-secondary bpm-step" data-step="-1">-1</button>
-                <input type="number" id="bpm-input" class="numeric-data" value="120" min="40" max="300"
-                    style="width: 70px; text-align: center; font-size: 1.2rem; font-weight: bold; border-color: transparent;">
-                <span id="midi-sync-status" style="display: none; font-size: 0.65rem; font-weight: bold; padding: 0.1rem 0.3rem; border-radius: 3px; background: var(--color-primary-accent); color: black; margin-left: -0.25rem; white-space: nowrap; box-shadow: 0 0 10px var(--color-primary-accent); align-items: center; gap: 4px;">
-                    <span id="midi-heartbeat" style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #a3e635; opacity: 0.5;"></span>
-                    EXT SYNC
-                </span>
-                <button class="btn-secondary bpm-step" data-step="1">+1</button>
-                <button class="btn-secondary bpm-step" data-step="5">+5</button>
-                <button class="btn-secondary bpm-step" data-step="10">+10</button>
-            </div>
+            <!-- Row 2 -->
+            <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+                <!-- BPM Tuner Engine -->
+                <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"
+                    data-help="Main Tempo (Beats Per Minute). Use the quick-step buttons for rapid tuning.">
+                    <span style="font-weight: 800; color: var(--color-text-muted); letter-spacing: 1px; font-size: 0.9rem;">BPM</span>
+                    <select id="bpm-pulse" title="BPM Pulse" style="background: transparent; color: white; border: none; font-size: 0.85em; outline: none; appearance: auto; -webkit-appearance: auto; padding: 0; cursor: pointer;">
+                        <option value="4" style="color: black;" selected>Quarter</option>
+                        <option value="8" style="color: black;">Eighth</option>
+                    </select>
+                    <button class="btn-secondary bpm-step" data-step="-10" style="padding: 0.2rem 0.5rem;">-10</button>
+                    <button class="btn-secondary bpm-step" data-step="-5" style="padding: 0.2rem 0.5rem;">-5</button>
+                    <button class="btn-secondary bpm-step" data-step="-1" style="padding: 0.2rem 0.5rem;">-1</button>
+                    <input type="number" id="bpm-input" class="numeric-data" value="120" min="40" max="300"
+                        style="width: 60px; height: 1.8rem; text-align: center; font-size: 1.1rem; font-weight: bold; border-color: transparent; padding: 0;">
+                    <span id="midi-sync-status" style="display: none; font-size: 0.65rem; font-weight: bold; padding: 0.1rem 0.3rem; border-radius: 3px; background: var(--color-primary-accent); color: black; margin-left: -0.25rem; white-space: nowrap; box-shadow: 0 0 10px var(--color-primary-accent); align-items: center; gap: 4px;">
+                        <span id="midi-heartbeat" style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #a3e635; opacity: 0.5;"></span>
+                        EXT SYNC
+                    </span>
+                    <button class="btn-secondary bpm-step" data-step="1" style="padding: 0.2rem 0.5rem;">+1</button>
+                    <button class="btn-secondary bpm-step" data-step="5" style="padding: 0.2rem 0.5rem;">+5</button>
+                    <button class="btn-secondary bpm-step" data-step="10" style="padding: 0.2rem 0.5rem;">+10</button>
+                </div>
 
-            <!-- Master Volume -->
-            <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 8px;"
-                data-help="Global metronome audio output volume. Drag past 100% to boost gain.">
-                <span>🔊</span>
-                <input type="range" id="setting-master-volume" value="100" min="0" max="300"
-                    style="width: 80px; align-self: center; margin-top: 0.2rem;">
-            </div>
-
-            <!-- Core Settings -->
-            <div style="display: flex; align-items: center; gap: 0.8rem;">
-                <div style="display: flex; align-items: center; background: rgba(0,0,0,0.3); padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); font-weight: bold; gap: 0.3rem;"
+                <!-- Core Settings -->
+                <div style="display: flex; align-items: center; background: rgba(0,0,0,0.2); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); font-weight: bold; gap: 0.3rem; font-size: 0.9rem;"
                     title="Time Signature"
                     data-help="Set the Time Signature (Beats per Bar / Subdivision). Hits resolve primarily back to default quarter note pulses.">
+                    <span style="font-weight: 800; color: var(--color-text-muted); letter-spacing: 1px; font-size: 0.85rem; margin-right: 0.3rem;">TS</span>
                     <select id="setting-ts-count"
-                        style="background: transparent; color: white; border: none; text-align: right; outline: none; appearance: auto; -webkit-appearance: auto; cursor: pointer; padding: 0 4px;">
+                        style="background: transparent; color: white; border: none; text-align: right; outline: none; appearance: auto; -webkit-appearance: auto; cursor: pointer; padding: 0;">
                         <option value="2" style="color: black;">2</option>
                         <option value="3" style="color: black;">3</option>
                         <option value="4" selected style="color: black;">4</option>
@@ -96,59 +102,59 @@
                     </select>
                     <span style="color: rgba(255,255,255,0.5);">/</span>
                     <select id="setting-ts-subdiv"
-                        style="background: transparent; color: white; border: none; outline: none; appearance: auto; -webkit-appearance: auto; cursor: pointer; padding: 0 4px;">
+                        style="background: transparent; color: white; border: none; outline: none; appearance: auto; -webkit-appearance: auto; cursor: pointer; padding: 0;">
                         <option value="2" style="color: black;">2</option>
                         <option value="4" selected style="color: black;">4</option>
                         <option value="8" style="color: black;">8</option>
                         <option value="16" style="color: black;">16</option>
                     </select>
                 </div>
-                <select id="setting-intervalMode" title="Interval Mode"
-                    data-help="Select 'Endless' to practice indefinitely, or set a focused duration filter which will auto-stop the clock."
-                    style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
-                    <option value="endless">Endless</option>
-                    <option value="1min">Focus (1 min)</option>
-                    <option value="3min">Stamina (3 min)</option>
-                </select>
-                <select id="setting-countInBars" title="Count-In"
-                    data-help="Sets the number of standard bars played before the session tracker and muting challenges actually begin."
-                    style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
-                    <option value="0">No Count</option>
-                    <option value="1">1 Bar-In</option>
-                    <option value="2" selected>2 Bar-In</option>
-                </select>
-                <select id="setting-voicing" title="Voicing"
-                    data-help="Select the click tone. 'Woodblock' is warmer, 'Voice' counts out loud, and 'Standard' is an electronic beep."
-                    style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
-                    <option value="beep">Beep</option>
-                    <option value="woodblock">Wood</option>
-                    <option value="female-voice">Female Voice</option>
-                    <option value="male-voice">Male Voice</option>
-                </select>
-                <select id="setting-emphasis" title="Emphasis Grid"
-                    data-help="Filters out specific beat pulses. 'Ands' only plays the offbeats; '2 and 4' forces backbeat feel."
-                    style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
-                    <option value="on-beat">On-beat</option>
-                    <option value="ands">Ands</option>
-                    <option value="2and4">2 & 4</option>
-                </select>
-                </select>
-            </div>
 
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <button id="btn-toggle-challenges"
-                    data-help="Opens the drop-down menu for advanced Mute Bars and Shaky Click features."
-                    style="padding: 0.4rem 0.8rem; cursor: pointer; border-radius: 4px; border: 1px solid rgba(255,255,255,0.4); background: rgba(255,255,255,0.1); color: white;">More
-                    Options ▽</button>
-                <button id="btn-hardware-setup"
-                    data-help="Configure MIDI ports, map custom electronic drum triggers, and calibrate system latency."
-                    style="padding: 0.4rem 0.8rem; cursor: pointer; border-radius: 4px; background: rgba(56, 189, 248, 0.2); color: var(--color-primary-accent); border: 1px solid var(--color-primary-accent);">⚙️
-                    Setup</button>
+                <!-- Master Volume -->
+                <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"
+                    data-help="Global metronome audio output volume. Drag past 100% to boost gain.">
+                    <span style="font-size: 0.9rem;">🔊</span>
+                    <input type="range" id="setting-master-volume" value="100" min="0" max="300"
+                        style="width: 80px; align-self: center;">
+                </div>
             </div>
 
             <!-- Absolute Dropdown Overlay for Challenges -->
             <div id="expanded-rhythm-settings"
                 style="display: none; position: absolute; top: calc(100% + 10px); left: 0; right: 0; background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); padding: 1.5rem; z-index: 20; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+                <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); flex-wrap: wrap;">
+                    <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                        <label style="font-size: 0.85rem; color: #94a3b8; font-weight: bold;">Interval Mode</label>
+                        <select id="setting-intervalMode" title="Interval Mode"
+                            data-help="Select 'Endless' to practice indefinitely, or set a focused duration filter which will auto-stop the clock."
+                            style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                            <option value="endless">Endless</option>
+                            <option value="1min">Focus (1 min)</option>
+                            <option value="3min">Stamina (3 min)</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                        <label style="font-size: 0.85rem; color: #94a3b8; font-weight: bold;">Count-In</label>
+                        <select id="setting-countInBars" title="Count-In"
+                            data-help="Sets the number of standard bars played before the session tracker and muting challenges actually begin."
+                            style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                            <option value="0">No Count</option>
+                            <option value="1">1 Bar-In</option>
+                            <option value="2" selected>2 Bar-In</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                        <label style="font-size: 0.85rem; color: #94a3b8; font-weight: bold;">Voicing</label>
+                        <select id="setting-voicing" title="Voicing"
+                            data-help="Select the click tone. 'Woodblock' is warmer, 'Voice' counts out loud, and 'Standard' is an electronic beep."
+                            style="padding: 0.3rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                            <option value="beep">Beep</option>
+                            <option value="woodblock">Wood</option>
+                            <option value="female-voice">Female Voice</option>
+                            <option value="male-voice">Male Voice</option>
+                        </select>
+                    </div>
+                </div>
                 <div style="display: flex; justify-content: space-around; gap: 2rem;">
                     <!-- Subdivision Mixer -->
                     <div style="flex: 1;">
@@ -164,6 +170,11 @@
                                         type="checkbox" id="setting-pattern-main" checked> Main Beat</label>
                                 <input type="range" id="vol-pattern-main" value="100" min="0" max="100"
                                     style="flex: 1;">
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; width: 120px;"><input
+                                        type="checkbox" id="setting-pattern-backbeats" checked> Backbeats</label>
+                                <input type="range" id="vol-pattern-backbeats" value="100" min="0" max="100" style="flex: 1;">
                             </div>
                             <div style="display: flex; align-items: center; justify-content: space-between;">
                                 <label style="display: flex; align-items: center; gap: 0.5rem; width: 120px;"><input

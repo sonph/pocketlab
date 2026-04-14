@@ -230,7 +230,6 @@ class PocketLabApp {
         bindSetting('setting-intervalMode', 'intervalMode');
         bindSetting('setting-countInBars', 'countInBars', true);
         bindSetting('setting-voicing', 'voicing');
-        bindSetting('setting-emphasis', 'emphasis');
         
         bindSetting('setting-gapRadioMode', 'gapRadioMode');
         bindSetting('setting-gapConstantOn', 'gapConstantOn', true);
@@ -390,7 +389,7 @@ class PocketLabApp {
             });
         }
         
-        ['main', '8th', '8thTrip', '16th', '16thTrip'].forEach(pat => {
+        ['main', 'backbeats', '8th', '8thTrip', '16th', '16thTrip'].forEach(pat => {
             const chk = document.getElementById(`setting-pattern-${pat}`);
             const slider = document.getElementById(`vol-pattern-${pat}`);
             if (chk) {

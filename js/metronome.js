@@ -14,7 +14,7 @@ export class Metronome {
         this.intervalMode = 'endless'; // endless, 1min, 3min
         this.countInBars = 2; // 0, 1, 2
         this.voicing = 'beep'; // beep, woodblock, voice
-        this.emphasis = 'on-beat'; // on-beat, ands, 2and4
+        this.voicing = 'beep'; // beep, woodblock, voice
         
         this.tsCount = 4;
         this.tsSubdiv = 4;
@@ -25,6 +25,7 @@ export class Metronome {
         
         this.patterns = {
             'main': true,
+            'backbeats': true,
             '8th': false,
             '8thTrip': false,
             '16th': false,
@@ -32,6 +33,7 @@ export class Metronome {
         };
         this.patternVolumes = {
             'main': 1.0,
+            'backbeats': 1.0,
             '8th': 0.5,
             '8thTrip': 0.5,
             '16th': 0.5,
@@ -319,17 +321,7 @@ export class Metronome {
         return false;
     }
 
-    shouldPlayEmphasis(tick) {
-        if (this.emphasis === 'on-beat') {
-            return tick % 12 === 0;
-        } else if (this.emphasis === 'ands') {
-            return tick % 12 === 6; // exact middle of the beat
-        } else if (this.emphasis === '2and4') {
-            const beatNumber = Math.floor(tick / 12);
-            return (beatNumber === 1 || beatNumber === 3) && (tick % 12 === 0); 
-        }
-        return false;
-    }
+
 
     setPlaybackMute(isMuted) {
         this.isPlaybackMuted = isMuted;
@@ -348,10 +340,30 @@ export class Metronome {
 
         // Determine specific layering triggers to allow active poly-rhythmic rendering
         let playMainBeat = false;
+        let mainVol = 0.0;
+        
         if (isCountInPhase) {
-            playMainBeat = (tick % 12 === 0);
+            if (tick % 12 === 0) {
+                playMainBeat = true;
+                mainVol = 1.0;
+            }
         } else {
-            playMainBeat = this.shouldPlayEmphasis(tick);
+            if (tick % 12 === 0) {
+                const beatIndex = Math.floor(tick / 12);
+                const isBackbeat = (beatIndex % 2 === 1);
+                
+                if (isBackbeat) {
+                    if (this.patterns['backbeats']) {
+                        playMainBeat = true;
+                        mainVol = this.patternVolumes['backbeats'];
+                    }
+                } else {
+                    if (this.patterns['main']) {
+                        playMainBeat = true;
+                        mainVol = this.patternVolumes['main'];
+                    }
+                }
+            }
         }
         
         let subVoiceVol = 0.0;
@@ -408,10 +420,8 @@ export class Metronome {
 
         if (gainValue > 0.0) {
             // Trigger specific rendering paths
-            if (playMainBeat || isCountInPhase) {
-                if (this.patterns['main'] || isCountInPhase) {
-                    this.playVoice(isDownbeat, beatIndex, scheduledTime, this.patternVolumes['main']);
-                }
+            if (playMainBeat) {
+                this.playVoice(isDownbeat, beatIndex, scheduledTime, mainVol);
             }
             if (!isCountInPhase && subVoiceVol > 0.0) {
                 this.playSubdivisionVoice(scheduledTime, subVoiceVol);
@@ -419,7 +429,7 @@ export class Metronome {
         }
 
         // Always alert engine mapping logic even if muted (Gap Radio), and include subdivisions
-        if (this.onNoteScheduled && (playMainBeat || isCountInPhase || (!isCountInPhase && subVoiceVol > 0.0))) {
+        if (this.onNoteScheduled && (playMainBeat || (!isCountInPhase && subVoiceVol > 0.0))) {
             this.onNoteScheduled({ time: scheduledTime, isDownbeat, beatIndex });
         }
     }

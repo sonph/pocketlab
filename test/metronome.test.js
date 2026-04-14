@@ -56,6 +56,65 @@ export function runMetronomeTests() {
         const quartersPerBar = metronome.tsCount * (4.0 / metronome.tsSubdiv);
         assertClose(quartersPerBar, 3.5, 0.001, 'Quarter Note density evaluated correctly for complex 7/8 subdivs');
 
+        // 6. Test Backbeats vs Main Beat Pattern logic
+        let scheduledVoices = [];
+        metronome.playVoice = function(isDownbeat, beatIndex, time, volume) {
+            scheduledVoices.push({ beatIndex, volume });
+        };
+        metronome.playSubdivisionVoice = function() {};
+        
+        // Ensure countIn is off to evaluate raw patterns
+        metronome.currentBarTotal = 2;
+        metronome.countInBars = 0;
+        
+        // Test Both checked
+        metronome.patterns['main'] = true;
+        metronome.patterns['backbeats'] = true;
+        metronome.patternVolumes['main'] = 1.0;
+        metronome.patternVolumes['backbeats'] = 0.8;
+        
+        scheduledVoices = [];
+        metronome.scheduleNote(0, 0); // beat 1 (index 0) - main beat
+        metronome.scheduleNote(12, 0); // beat 2 (index 1) - backbeat
+        metronome.scheduleNote(24, 0); // beat 3 (index 2) - main beat
+        metronome.scheduleNote(36, 0); // beat 4 (index 3) - backbeat
+        
+        assertEqual(scheduledVoices.length, 4, 'All 4 beats scheduled when both main and backbeats are true');
+        assertEqual(scheduledVoices[0].volume, 1.0, 'Beat 1 uses main volume');
+        assertEqual(scheduledVoices[1].volume, 0.8, 'Beat 2 uses backbeat volume');
+        assertEqual(scheduledVoices[2].volume, 1.0, 'Beat 3 uses main volume');
+        assertEqual(scheduledVoices[3].volume, 0.8, 'Beat 4 uses backbeat volume');
+        
+        // Test Only Backbeats
+        metronome.patterns['main'] = false;
+        metronome.patterns['backbeats'] = true;
+        scheduledVoices = [];
+        metronome.scheduleNote(0, 0); // beat 1
+        metronome.scheduleNote(12, 0); // beat 2
+        metronome.scheduleNote(24, 0); // beat 3
+        metronome.scheduleNote(36, 0); // beat 4
+        
+        assertEqual(scheduledVoices.length, 2, 'Only 2 beats scheduled when main is false and backbeats is true');
+        if (scheduledVoices.length === 2) {
+            assertEqual(scheduledVoices[0].beatIndex, 1, 'First scheduled beat is beat 2 (index 1)');
+            assertEqual(scheduledVoices[1].beatIndex, 3, 'Second scheduled beat is beat 4 (index 3)');
+        }
+        
+        // Test Only Main
+        metronome.patterns['main'] = true;
+        metronome.patterns['backbeats'] = false;
+        scheduledVoices = [];
+        metronome.scheduleNote(0, 0); // beat 1
+        metronome.scheduleNote(12, 0); // beat 2
+        metronome.scheduleNote(24, 0); // beat 3
+        metronome.scheduleNote(36, 0); // beat 4
+        
+        assertEqual(scheduledVoices.length, 2, 'Only 2 beats scheduled when main is true and backbeats is false');
+        if (scheduledVoices.length === 2) {
+            assertEqual(scheduledVoices[0].beatIndex, 0, 'First scheduled beat is beat 1 (index 0)');
+            assertEqual(scheduledVoices[1].beatIndex, 2, 'Second scheduled beat is beat 3 (index 2)');
+        }
+
     } catch (e) {
         output.innerHTML += `\n💥 ERROR during Metronome execution: ${e.message}\n${e.stack}\n`;
     }
